@@ -1,0 +1,10 @@
+[handbooks]
+server = "localhost:3001"
+
+[database]
+host = "localhost"
+port = 5431
+user = "postgres"
+password = "admin21"
+name = "handbooks"
+sslmode = "disable"
