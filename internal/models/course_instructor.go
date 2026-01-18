@@ -1,12 +1,24 @@
 package models
 
+import (
+	"context"
+	"log/slog"
+
+	"github.com/jackc/pgx/v5"
+)
+
 type CourseInstructor struct {
+	ID			uint
 	CourseID    uint
 	UserID      uint
 	IsMain      bool
 	Position    int
-	BioOnCourse string `gorm:"type:text"`
+	BioOnCourse string
 
-	Course     Course `gorm:"constraint:OnDelete:CASCADE"`
-	Instructor User   `gorm:"constraint:OnDelete:CASCADE"`
+	Course     Course
+	Instructor User
+}
+
+func (c *CourseInstructor) CreateCourseInstructor(ctx context.Context, db *pgx.Conn, logger *slog.Logger) {
+	if _,err:= db.QueryRow()
 }
