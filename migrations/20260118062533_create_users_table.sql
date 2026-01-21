@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS users (
     avatar_url      VARCHAR(512),
     role            VARCHAR(50) DEFAULT 'student',
     created_at      TIMESTAMPTZ DEFAULT NOW(),
+    updated_at      TIMESTAMPTZ,
     last_login_at   TIMESTAMPTZ
 );
 -- +goose StatementEnd

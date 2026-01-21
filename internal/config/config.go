@@ -35,6 +35,21 @@ type Config struct {
 		writeTimeoutDur time.Duration
 		idleTimeoutDur  time.Duration
 	} `toml:"server"`
+	Redis struct {
+		Addr            string `toml:"addr"`
+		Password        string `toml:"password"`
+		DB              int    `	toml:"db"`
+		RefreshTokenTTL string `toml:"refreshTokenTTL"`
+		AccessTokenTTL  string `toml:"accessTokenTTL"`
+
+		refreshTokenTTL time.Duration
+		accessTokenTTL  time.Duration
+	} `toml:"redis"`
+	JwtOpt struct {
+		Key      string `toml:"key"`
+		Issuer   string `toml:"issuer"`
+		Audience string `toml:"audience"`
+	} `toml:"jwt"`
 }
 
 func (c *Config) DatabaseURL() string         { return c.Database.URL }
@@ -98,6 +113,24 @@ func (c *Config) parseTimeouts() error {
 
 	if c.Server.idleTimeoutDur <= 0 {
 		return fmt.Errorf("idleTimeout must be positive, got %v", c.Server.idleTimeoutDur)
+	}
+
+	c.Redis.accessTokenTTL, err = time.ParseDuration(c.Redis.AccessTokenTTL)
+	if err != nil {
+		return fmt.Errorf("invalid accessTokenTTL %q: %w", c.Redis.AccessTokenTTL, err)
+	}
+
+	if c.Redis.accessTokenTTL <= 0 {
+		return fmt.Errorf("access token ttl must be positive, got %v", c.Redis.accessTokenTTL)
+	}
+
+	c.Redis.refreshTokenTTL, err = time.ParseDuration(c.Redis.RefreshTokenTTL)
+	if err != nil {
+		return fmt.Errorf("invalid refreshTokenTTL %q: %w", c.Redis.AccessTokenTTL, err)
+	}
+
+	if c.Redis.refreshTokenTTL <= 0 {
+		return fmt.Errorf("refresh token ttl must be positive, got %v", c.Redis.refreshTokenTTL)
 	}
 
 	return nil

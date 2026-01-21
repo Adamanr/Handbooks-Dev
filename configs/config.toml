@@ -2,10 +2,10 @@
 logLevel = "info"
 
 [database]
-host = "localhost"
-port = 5431
+host = "logiflowadvanced.online"
+port = 5432
 user = "postgres"
-password = "admin21"
+password = "anton123"
 name = "handbooks"
 sslmode = "disable"
 
@@ -15,3 +15,15 @@ port = 3001
 readTimeout = "10s"
 writeTimeout = "30s"
 idleTimeout = "60s"
+
+[redis]
+addr = "localhost:5739"
+password = "redis123"
+db = 0
+refreshTokenTTL = "168h"
+accessTokenTTL = "24h"
+
+[jwt]
+key = "98c5772ae16aaa4fd0013eb338252a93b198fb40e9337506334b3aeb21abbe4cd9289cdd"
+issuer = "handbooks-server"
+audience = "handbooks-client"

@@ -6,22 +6,33 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/huandu/go-sqlbuilder"
 	"github.com/jackc/pgx/v5"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type User struct {
-	ID          uint       `db:"id"`
-	Email       string     `db:"email"`
-	FullName    string     `db:"full_name"`
-	AvatarURL   string     `db:"avatar_url"`
-	Role        string     `db:"role"` // student, instructor, admin
-	CreatedAt   time.Time  `db:"created_at"`
-	UpdatedAt   time.Time  `db:"updated_at"`
-	LastLoginAt *time.Time `db:"last_login_at"`
+	ID           uint       `db:"id"`
+	Email        string     `db:"email"`
+	PasswordHash string     `db:"password_hash"`
+	FullName     string     `db:"full_name"`
+	AvatarURL    string     `db:"avatar_url"`
+	Role         string     `db:"role"` // student, instructor, admin
+	CreatedAt    time.Time  `db:"created_at"`
+	UpdatedAt    time.Time  `db:"updated_at"`
+	LastLoginAt  *time.Time `db:"last_login_at"`
 
 	// Не сохраняем в БД и не читаем из БД после загрузки (безопасность)
-	PasswordHash string `db:"-"`
+}
+
+type Claims struct {
+	jwt.RegisteredClaims
+
+	ID      uint   `json:"id"`
+	Email   string `json:"email"`
+	Role    string `json:"role"`
+	TokenID string `json:"token_id"`
 }
 
 const tableUsers = "users"
@@ -35,12 +46,18 @@ func (u *User) CreateUser(ctx context.Context, db Querier) (uint, error) {
 	u.CreatedAt = now
 	u.UpdatedAt = now
 
+	pswdhash, err := bcrypt.GenerateFromPassword([]byte(u.PasswordHash), bcrypt.DefaultCost)
+	if err != nil {
+		slog.ErrorContext(ctx, "cannot hash password", slog.String("error", err.Error()))
+	}
+	u.PasswordHash = string(pswdhash)
+
 	sb := userStruct.WithoutTag("db", "-").InsertInto(tableUsers, u)
 	sb.Returning("id")
 
 	query, args := sb.Build()
 
-	err := db.QueryRow(ctx, query, args...).Scan(&u.ID)
+	err = db.QueryRow(ctx, query, args...).Scan(&u.ID)
 	if err != nil {
 		slog.ErrorContext(ctx, "cannot create user",
 			slog.String("email", u.Email),
@@ -132,6 +149,12 @@ func (u *User) UpdateUser(ctx context.Context, db Querier) error {
 	}
 
 	u.UpdatedAt = time.Now()
+
+	pswdhash, err := bcrypt.GenerateFromPassword([]byte(u.PasswordHash), bcrypt.DefaultCost)
+	if err != nil {
+		slog.ErrorContext(ctx, "cannot hash password", slog.String("error", err.Error()))
+	}
+	u.PasswordHash = string(pswdhash)
 
 	sb := userStruct.WithoutTag("db", "-").Update(tableUsers, u)
 	sb.Where(sb.Equal("id", u.ID))

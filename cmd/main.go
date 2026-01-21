@@ -41,11 +41,17 @@ func main() {
 		return
 	}
 
-	database, err := database.NewDatabase(ctx, cfg.DatabaseURL())
+	postgres, err := database.NewDatabase(ctx, cfg.DatabaseURL())
 	if err != nil {
 		slog.ErrorContext(ctx, "Error create new database connections!", slog.String("Error", err.Error()))
 		return
 	}
 
-	handlers.NewServer(database, cfg).Run()
+	redis, err := database.NewRedisConnection(ctx, *cfg)
+	if err != nil {
+		slog.ErrorContext(ctx, "Error create new redis connection!", slog.String("Error", err.Error()))
+		return
+	}
+
+	handlers.NewServer(postgres, redis, cfg).Run()
 }

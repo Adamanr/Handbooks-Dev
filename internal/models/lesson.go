@@ -26,7 +26,7 @@ type Lesson struct {
 	Section Section `db:"-"`
 }
 
-const tableLessons = "lesson"
+const tableLessons = "lessons"
 
 var ErrNotFound = errors.New("lesson not found")
 
