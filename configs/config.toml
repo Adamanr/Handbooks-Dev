@@ -1,5 +1,5 @@
 [handbooks]
-server = "localhost:3001"
+logLevel = "info"
 
 [database]
 host = "localhost"
@@ -8,3 +8,10 @@ user = "postgres"
 password = "admin21"
 name = "handbooks"
 sslmode = "disable"
+
+[server]
+host = "localhost"
+port = 3001
+readTimeout = "10s"
+writeTimeout = "30s"
+idleTimeout = "60s"

@@ -20,16 +20,37 @@ const (
 
 // Defines values for CourseLevel.
 const (
-	Advanced     CourseLevel = "advanced"
-	Beginner     CourseLevel = "beginner"
-	Intermediate CourseLevel = "intermediate"
+	CourseLevelAdvanced     CourseLevel = "advanced"
+	CourseLevelBeginner     CourseLevel = "beginner"
+	CourseLevelIntermediate CourseLevel = "intermediate"
 )
 
 // Defines values for CourseStatus.
 const (
-	Archived  CourseStatus = "archived"
-	Draft     CourseStatus = "draft"
-	Published CourseStatus = "published"
+	CourseStatusArchived  CourseStatus = "archived"
+	CourseStatusDraft     CourseStatus = "draft"
+	CourseStatusPublished CourseStatus = "published"
+)
+
+// Defines values for CourseCreateLevel.
+const (
+	CourseCreateLevelAdvanced     CourseCreateLevel = "advanced"
+	CourseCreateLevelBeginner     CourseCreateLevel = "beginner"
+	CourseCreateLevelIntermediate CourseCreateLevel = "intermediate"
+)
+
+// Defines values for CourseUpdateLevel.
+const (
+	Advanced     CourseUpdateLevel = "advanced"
+	Beginner     CourseUpdateLevel = "beginner"
+	Intermediate CourseUpdateLevel = "intermediate"
+)
+
+// Defines values for CourseUpdateStatus.
+const (
+	CourseUpdateStatusArchived  CourseUpdateStatus = "archived"
+	CourseUpdateStatusDraft     CourseUpdateStatus = "draft"
+	CourseUpdateStatusPublished CourseUpdateStatus = "published"
 )
 
 // Defines values for EnrollmentStatus.
@@ -38,6 +59,39 @@ const (
 	Completed EnrollmentStatus = "completed"
 	Expired   EnrollmentStatus = "expired"
 	Refunded  EnrollmentStatus = "refunded"
+)
+
+// Defines values for LessonType.
+const (
+	LessonTypeAssignment LessonType = "assignment"
+	LessonTypeCoding     LessonType = "coding"
+	LessonTypeEmbed      LessonType = "embed"
+	LessonTypePdf        LessonType = "pdf"
+	LessonTypeQuiz       LessonType = "quiz"
+	LessonTypeText       LessonType = "text"
+	LessonTypeVideo      LessonType = "video"
+)
+
+// Defines values for LessonCreateType.
+const (
+	LessonCreateTypeAssignment LessonCreateType = "assignment"
+	LessonCreateTypeCoding     LessonCreateType = "coding"
+	LessonCreateTypeEmbed      LessonCreateType = "embed"
+	LessonCreateTypePdf        LessonCreateType = "pdf"
+	LessonCreateTypeQuiz       LessonCreateType = "quiz"
+	LessonCreateTypeText       LessonCreateType = "text"
+	LessonCreateTypeVideo      LessonCreateType = "video"
+)
+
+// Defines values for LessonUpdateType.
+const (
+	Assignment LessonUpdateType = "assignment"
+	Coding     LessonUpdateType = "coding"
+	Embed      LessonUpdateType = "embed"
+	Pdf        LessonUpdateType = "pdf"
+	Quiz       LessonUpdateType = "quiz"
+	Text       LessonUpdateType = "text"
+	Video      LessonUpdateType = "video"
 )
 
 // Defines values for UserRole.
@@ -60,6 +114,7 @@ type Course struct {
 	Status      *CourseStatus `json:"status,omitempty"`
 	Subtitle    *string       `json:"subtitle,omitempty"`
 	Title       *string       `json:"title,omitempty"`
+	UpdatedAt   *time.Time    `json:"updatedAt,omitempty"`
 }
 
 // CourseLevel defines model for Course.Level.
@@ -67,6 +122,40 @@ type CourseLevel string
 
 // CourseStatus defines model for Course.Status.
 type CourseStatus string
+
+// CourseCreate defines model for CourseCreate.
+type CourseCreate struct {
+	CoverUrl    *string            `json:"coverUrl,omitempty"`
+	Currency    *string            `json:"currency,omitempty"`
+	Description *string            `json:"description,omitempty"`
+	Level       *CourseCreateLevel `json:"level,omitempty"`
+	Price       *float32           `json:"price,omitempty"`
+	Slug        string             `json:"slug"`
+	Subtitle    *string            `json:"subtitle,omitempty"`
+	Title       string             `json:"title"`
+}
+
+// CourseCreateLevel defines model for CourseCreate.Level.
+type CourseCreateLevel string
+
+// CourseUpdate defines model for CourseUpdate.
+type CourseUpdate struct {
+	CoverUrl    *string             `json:"coverUrl,omitempty"`
+	Currency    *string             `json:"currency,omitempty"`
+	Description *string             `json:"description,omitempty"`
+	Level       *CourseUpdateLevel  `json:"level,omitempty"`
+	Price       *float32            `json:"price,omitempty"`
+	Slug        *string             `json:"slug,omitempty"`
+	Status      *CourseUpdateStatus `json:"status,omitempty"`
+	Subtitle    *string             `json:"subtitle,omitempty"`
+	Title       *string             `json:"title,omitempty"`
+}
+
+// CourseUpdateLevel defines model for CourseUpdate.Level.
+type CourseUpdateLevel string
+
+// CourseUpdateStatus defines model for CourseUpdate.Status.
+type CourseUpdateStatus string
 
 // Enrollment defines model for Enrollment.
 type Enrollment struct {
@@ -89,11 +178,78 @@ type ErrorResponse struct {
 	Status  *int    `json:"status,omitempty"`
 }
 
+// Lesson defines model for Lesson.
+type Lesson struct {
+	// Content URL видео, текст, markdown, JSON для quiz и т.д.
+	Content     *string    `json:"content,omitempty"`
+	CreatedAt   *time.Time `json:"createdAt,omitempty"`
+	DurationSec *int       `json:"durationSec"`
+	Id          *int64     `json:"id,omitempty"`
+	IsPublished *bool      `json:"isPublished,omitempty"`
+
+	// Order Порядковый номер урока внутри раздела
+	Order     *int        `json:"order,omitempty"`
+	SectionId *int64      `json:"sectionId,omitempty"`
+	Title     *string     `json:"title,omitempty"`
+	Type      *LessonType `json:"type,omitempty"`
+	UpdatedAt *time.Time  `json:"updatedAt,omitempty"`
+}
+
+// LessonType defines model for Lesson.Type.
+type LessonType string
+
+// LessonCreate defines model for LessonCreate.
+type LessonCreate struct {
+	Content     *string          `json:"content,omitempty"`
+	DurationSec *int             `json:"durationSec,omitempty"`
+	IsPublished *bool            `json:"isPublished,omitempty"`
+	Order       int              `json:"order"`
+	Title       string           `json:"title"`
+	Type        LessonCreateType `json:"type"`
+}
+
+// LessonCreateType defines model for LessonCreate.Type.
+type LessonCreateType string
+
+// LessonUpdate defines model for LessonUpdate.
+type LessonUpdate struct {
+	Content     *string           `json:"content,omitempty"`
+	DurationSec *int              `json:"durationSec,omitempty"`
+	IsPublished *bool             `json:"isPublished,omitempty"`
+	Order       *int              `json:"order,omitempty"`
+	Title       *string           `json:"title,omitempty"`
+	Type        *LessonUpdateType `json:"type,omitempty"`
+}
+
+// LessonUpdateType defines model for LessonUpdate.Type.
+type LessonUpdateType string
+
 // Section defines model for Section.
 type Section struct {
+	CourseId  *int64     `json:"courseId,omitempty"`
+	CreatedAt *time.Time `json:"createdAt,omitempty"`
+
 	// EstimatedTime minutes
+	EstimatedTime *int       `json:"estimatedTime,omitempty"`
+	Id            *int64     `json:"id,omitempty"`
+	IsFreePreview *bool      `json:"isFreePreview,omitempty"`
+	Order         *int       `json:"order,omitempty"`
+	Title         *string    `json:"title,omitempty"`
+	UpdatedAt     *time.Time `json:"updatedAt,omitempty"`
+}
+
+// SectionCreate defines model for SectionCreate.
+type SectionCreate struct {
+	// EstimatedTime minutes
+	EstimatedTime *int   `json:"estimatedTime,omitempty"`
+	IsFreePreview *bool  `json:"isFreePreview,omitempty"`
+	Order         int    `json:"order"`
+	Title         string `json:"title"`
+}
+
+// SectionUpdate defines model for SectionUpdate.
+type SectionUpdate struct {
 	EstimatedTime *int    `json:"estimatedTime,omitempty"`
-	Id            *int64  `json:"id,omitempty"`
 	IsFreePreview *bool   `json:"isFreePreview,omitempty"`
 	Order         *int    `json:"order,omitempty"`
 	Title         *string `json:"title,omitempty"`
@@ -112,94 +268,146 @@ type User struct {
 // UserRole defines model for User.Role.
 type UserRole string
 
-// PostAuthLoginJSONBody defines parameters for PostAuthLogin.
-type PostAuthLoginJSONBody struct {
+// AuthLoginUserJSONBody defines parameters for AuthLoginUser.
+type AuthLoginUserJSONBody struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
 }
 
-// PostAuthRegisterJSONBody defines parameters for PostAuthRegister.
-type PostAuthRegisterJSONBody struct {
+// AuthRegisterUserJSONBody defines parameters for AuthRegisterUser.
+type AuthRegisterUserJSONBody struct {
 	Email    openapi_types.Email `json:"email"`
 	FullName string              `json:"fullName"`
 	Password string              `json:"password"`
 }
 
-// GetCoursesParams defines parameters for GetCourses.
-type GetCoursesParams struct {
+// CoursesListParams defines parameters for CoursesList.
+type CoursesListParams struct {
 	Page     *int    `form:"page,omitempty" json:"page,omitempty"`
 	Limit    *int    `form:"limit,omitempty" json:"limit,omitempty"`
 	Category *string `form:"category,omitempty" json:"category,omitempty"`
 	Level    *string `form:"level,omitempty" json:"level,omitempty"`
+
+	// Search Поиск по названию или описанию
+	Search *string `form:"search,omitempty" json:"search,omitempty"`
 }
 
-// PostCoursesJSONBody defines parameters for PostCourses.
-type PostCoursesJSONBody struct {
-	Currency    *string  `json:"currency,omitempty"`
-	Description *string  `json:"description,omitempty"`
-	Level       *string  `json:"level,omitempty"`
-	Price       *float32 `json:"price,omitempty"`
-	Slug        string   `json:"slug"`
-	Subtitle    *string  `json:"subtitle,omitempty"`
-	Title       string   `json:"title"`
-}
-
-// PostCoursesCourseIdEnrollJSONBody defines parameters for PostCoursesCourseIdEnroll.
-type PostCoursesCourseIdEnrollJSONBody struct {
+// EnrollmentsEnrollInCourseJSONBody defines parameters for EnrollmentsEnrollInCourse.
+type EnrollmentsEnrollInCourseJSONBody struct {
 	PromoCode *string `json:"promoCode,omitempty"`
 }
 
-// PatchMeCoursesCourseIdLessonsLessonIdProgressJSONBody defines parameters for PatchMeCoursesCourseIdLessonsLessonIdProgress.
-type PatchMeCoursesCourseIdLessonsLessonIdProgressJSONBody struct {
+// CoursesGetSectionsParams defines parameters for CoursesGetSections.
+type CoursesGetSectionsParams struct {
+	// IncludeUnpublished Включать неопубликованные разделы (для авторов курса)
+	IncludeUnpublished *bool `form:"includeUnpublished,omitempty" json:"includeUnpublished,omitempty"`
+}
+
+// SectionsGetLessonsParams defines parameters for SectionsGetLessons.
+type SectionsGetLessonsParams struct {
+	// PublishedOnly Показывать только опубликованные уроки (для студентов)
+	PublishedOnly *bool `form:"publishedOnly,omitempty" json:"publishedOnly,omitempty"`
+}
+
+// ProgressUpdateLessonProgressJSONBody defines parameters for ProgressUpdateLessonProgress.
+type ProgressUpdateLessonProgressJSONBody struct {
 	Completed      *bool    `json:"completed,omitempty"`
 	LastWatchedSec *int     `json:"lastWatchedSec,omitempty"`
 	Percent        *float32 `json:"percent,omitempty"`
 }
 
-// PostAuthLoginJSONRequestBody defines body for PostAuthLogin for application/json ContentType.
-type PostAuthLoginJSONRequestBody PostAuthLoginJSONBody
+// AuthLoginUserJSONRequestBody defines body for AuthLoginUser for application/json ContentType.
+type AuthLoginUserJSONRequestBody AuthLoginUserJSONBody
 
-// PostAuthRegisterJSONRequestBody defines body for PostAuthRegister for application/json ContentType.
-type PostAuthRegisterJSONRequestBody PostAuthRegisterJSONBody
+// AuthRegisterUserJSONRequestBody defines body for AuthRegisterUser for application/json ContentType.
+type AuthRegisterUserJSONRequestBody AuthRegisterUserJSONBody
 
-// PostCoursesJSONRequestBody defines body for PostCourses for application/json ContentType.
-type PostCoursesJSONRequestBody PostCoursesJSONBody
+// CoursesCreateJSONRequestBody defines body for CoursesCreate for application/json ContentType.
+type CoursesCreateJSONRequestBody = CourseCreate
 
-// PostCoursesCourseIdEnrollJSONRequestBody defines body for PostCoursesCourseIdEnroll for application/json ContentType.
-type PostCoursesCourseIdEnrollJSONRequestBody PostCoursesCourseIdEnrollJSONBody
+// CoursesUpdateJSONRequestBody defines body for CoursesUpdate for application/json ContentType.
+type CoursesUpdateJSONRequestBody = CourseUpdate
 
-// PatchMeCoursesCourseIdLessonsLessonIdProgressJSONRequestBody defines body for PatchMeCoursesCourseIdLessonsLessonIdProgress for application/json ContentType.
-type PatchMeCoursesCourseIdLessonsLessonIdProgressJSONRequestBody PatchMeCoursesCourseIdLessonsLessonIdProgressJSONBody
+// EnrollmentsEnrollInCourseJSONRequestBody defines body for EnrollmentsEnrollInCourse for application/json ContentType.
+type EnrollmentsEnrollInCourseJSONRequestBody EnrollmentsEnrollInCourseJSONBody
+
+// CoursesCreateSectionJSONRequestBody defines body for CoursesCreateSection for application/json ContentType.
+type CoursesCreateSectionJSONRequestBody = SectionCreate
+
+// SectionsUpdateJSONRequestBody defines body for SectionsUpdate for application/json ContentType.
+type SectionsUpdateJSONRequestBody = SectionUpdate
+
+// SectionsCreateLessonJSONRequestBody defines body for SectionsCreateLesson for application/json ContentType.
+type SectionsCreateLessonJSONRequestBody = LessonCreate
+
+// LessonsUpdateJSONRequestBody defines body for LessonsUpdate for application/json ContentType.
+type LessonsUpdateJSONRequestBody = LessonUpdate
+
+// ProgressUpdateLessonProgressJSONRequestBody defines body for ProgressUpdateLessonProgress for application/json ContentType.
+type ProgressUpdateLessonProgressJSONRequestBody ProgressUpdateLessonProgressJSONBody
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 	// Авторизация пользователя
 	// (POST /auth/login)
-	PostAuthLogin(w http.ResponseWriter, r *http.Request)
+	AuthLoginUser(w http.ResponseWriter, r *http.Request)
 	// Регистрация нового пользователя
 	// (POST /auth/register)
-	PostAuthRegister(w http.ResponseWriter, r *http.Request)
-	// Список всех опубликованных курсов
+	AuthRegisterUser(w http.ResponseWriter, r *http.Request)
+	// Список всех опубликованных курсов (для всех пользователей)
 	// (GET /courses)
-	GetCourses(w http.ResponseWriter, r *http.Request, params GetCoursesParams)
+	CoursesList(w http.ResponseWriter, r *http.Request, params CoursesListParams)
 	// Создание нового курса (только для преподавателей и админов)
 	// (POST /courses)
-	PostCourses(w http.ResponseWriter, r *http.Request)
+	CoursesCreate(w http.ResponseWriter, r *http.Request)
+	// Удалить курс (только для админов или владельца)
+	// (DELETE /courses/{courseId})
+	CoursesDelete(w http.ResponseWriter, r *http.Request, courseId int)
 	// Получить подробную информацию о курсе
 	// (GET /courses/{courseId})
-	GetCoursesCourseId(w http.ResponseWriter, r *http.Request, courseId int)
+	CoursesGetById(w http.ResponseWriter, r *http.Request, courseId int)
+	// Частично обновить курс (для преподавателей и админов)
+	// (PATCH /courses/{courseId})
+	CoursesUpdate(w http.ResponseWriter, r *http.Request, courseId int)
 	// Записаться на курс / купить курс
 	// (POST /courses/{courseId}/enroll)
-	PostCoursesCourseIdEnroll(w http.ResponseWriter, r *http.Request, courseId int)
+	EnrollmentsEnrollInCourse(w http.ResponseWriter, r *http.Request, courseId int)
 	// Получить все разделы курса
 	// (GET /courses/{courseId}/sections)
-	GetCoursesCourseIdSections(w http.ResponseWriter, r *http.Request, courseId int)
+	CoursesGetSections(w http.ResponseWriter, r *http.Request, courseId int, params CoursesGetSectionsParams)
+	// Создать новый раздел в курсе (для преподавателей/админов)
+	// (POST /courses/{courseId}/sections)
+	CoursesCreateSection(w http.ResponseWriter, r *http.Request, courseId int)
+	// Удалить раздел (для преподавателей/админов)
+	// (DELETE /courses/{courseId}/sections/{sectionId})
+	SectionsDelete(w http.ResponseWriter, r *http.Request, courseId int, sectionId int)
+	// Получить информацию об одном разделе курса
+	// (GET /courses/{courseId}/sections/{sectionId})
+	SectionsGetById(w http.ResponseWriter, r *http.Request, courseId int, sectionId int)
+	// Обновить раздел (для преподавателей/админов)
+	// (PATCH /courses/{courseId}/sections/{sectionId})
+	SectionsUpdate(w http.ResponseWriter, r *http.Request, courseId int, sectionId int)
+	// Получить список всех уроков в разделе курса
+	// (GET /courses/{courseId}/sections/{sectionId}/lessons)
+	SectionsGetLessons(w http.ResponseWriter, r *http.Request, courseId int, sectionId int, params SectionsGetLessonsParams)
+	// Создать новый урок в разделе (для преподавателей/админов)
+	// (POST /courses/{courseId}/sections/{sectionId}/lessons)
+	SectionsCreateLesson(w http.ResponseWriter, r *http.Request, courseId int, sectionId int)
+	// Удалить урок (для преподавателей/админов)
+	// (DELETE /courses/{courseId}/sections/{sectionId}/lessons/{lessonId})
+	LessonsDelete(w http.ResponseWriter, r *http.Request, courseId int, sectionId int, lessonId int)
+	// Получить информацию об одном уроке
+	// (GET /courses/{courseId}/sections/{sectionId}/lessons/{lessonId})
+	LessonsGetById(w http.ResponseWriter, r *http.Request, courseId int, sectionId int, lessonId int)
+	// Обновить урок (для преподавателей/админов)
+	// (PATCH /courses/{courseId}/sections/{sectionId}/lessons/{lessonId})
+	LessonsUpdate(w http.ResponseWriter, r *http.Request, courseId int, sectionId int, lessonId int)
 	// Обновить прогресс урока
 	// (PATCH /me/courses/{courseId}/lessons/{lessonId}/progress)
-	PatchMeCoursesCourseIdLessonsLessonIdProgress(w http.ResponseWriter, r *http.Request, courseId int, lessonId int)
+	ProgressUpdateLessonProgress(w http.ResponseWriter, r *http.Request, courseId int, lessonId int)
 	// Прогресс пользователя по всем курсам
 	// (GET /me/progress)
-	GetMeProgress(w http.ResponseWriter, r *http.Request)
+	ProgressGetUserProgress(w http.ResponseWriter, r *http.Request)
 }
 
 // Unimplemented server implementation that returns http.StatusNotImplemented for each endpoint.
@@ -208,55 +416,121 @@ type Unimplemented struct{}
 
 // Авторизация пользователя
 // (POST /auth/login)
-func (_ Unimplemented) PostAuthLogin(w http.ResponseWriter, r *http.Request) {
+func (_ Unimplemented) AuthLoginUser(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
 // Регистрация нового пользователя
 // (POST /auth/register)
-func (_ Unimplemented) PostAuthRegister(w http.ResponseWriter, r *http.Request) {
+func (_ Unimplemented) AuthRegisterUser(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
-// Список всех опубликованных курсов
+// Список всех опубликованных курсов (для всех пользователей)
 // (GET /courses)
-func (_ Unimplemented) GetCourses(w http.ResponseWriter, r *http.Request, params GetCoursesParams) {
+func (_ Unimplemented) CoursesList(w http.ResponseWriter, r *http.Request, params CoursesListParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
 // Создание нового курса (только для преподавателей и админов)
 // (POST /courses)
-func (_ Unimplemented) PostCourses(w http.ResponseWriter, r *http.Request) {
+func (_ Unimplemented) CoursesCreate(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Удалить курс (только для админов или владельца)
+// (DELETE /courses/{courseId})
+func (_ Unimplemented) CoursesDelete(w http.ResponseWriter, r *http.Request, courseId int) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
 // Получить подробную информацию о курсе
 // (GET /courses/{courseId})
-func (_ Unimplemented) GetCoursesCourseId(w http.ResponseWriter, r *http.Request, courseId int) {
+func (_ Unimplemented) CoursesGetById(w http.ResponseWriter, r *http.Request, courseId int) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Частично обновить курс (для преподавателей и админов)
+// (PATCH /courses/{courseId})
+func (_ Unimplemented) CoursesUpdate(w http.ResponseWriter, r *http.Request, courseId int) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
 // Записаться на курс / купить курс
 // (POST /courses/{courseId}/enroll)
-func (_ Unimplemented) PostCoursesCourseIdEnroll(w http.ResponseWriter, r *http.Request, courseId int) {
+func (_ Unimplemented) EnrollmentsEnrollInCourse(w http.ResponseWriter, r *http.Request, courseId int) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
 // Получить все разделы курса
 // (GET /courses/{courseId}/sections)
-func (_ Unimplemented) GetCoursesCourseIdSections(w http.ResponseWriter, r *http.Request, courseId int) {
+func (_ Unimplemented) CoursesGetSections(w http.ResponseWriter, r *http.Request, courseId int, params CoursesGetSectionsParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Создать новый раздел в курсе (для преподавателей/админов)
+// (POST /courses/{courseId}/sections)
+func (_ Unimplemented) CoursesCreateSection(w http.ResponseWriter, r *http.Request, courseId int) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Удалить раздел (для преподавателей/админов)
+// (DELETE /courses/{courseId}/sections/{sectionId})
+func (_ Unimplemented) SectionsDelete(w http.ResponseWriter, r *http.Request, courseId int, sectionId int) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Получить информацию об одном разделе курса
+// (GET /courses/{courseId}/sections/{sectionId})
+func (_ Unimplemented) SectionsGetById(w http.ResponseWriter, r *http.Request, courseId int, sectionId int) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Обновить раздел (для преподавателей/админов)
+// (PATCH /courses/{courseId}/sections/{sectionId})
+func (_ Unimplemented) SectionsUpdate(w http.ResponseWriter, r *http.Request, courseId int, sectionId int) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Получить список всех уроков в разделе курса
+// (GET /courses/{courseId}/sections/{sectionId}/lessons)
+func (_ Unimplemented) SectionsGetLessons(w http.ResponseWriter, r *http.Request, courseId int, sectionId int, params SectionsGetLessonsParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Создать новый урок в разделе (для преподавателей/админов)
+// (POST /courses/{courseId}/sections/{sectionId}/lessons)
+func (_ Unimplemented) SectionsCreateLesson(w http.ResponseWriter, r *http.Request, courseId int, sectionId int) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Удалить урок (для преподавателей/админов)
+// (DELETE /courses/{courseId}/sections/{sectionId}/lessons/{lessonId})
+func (_ Unimplemented) LessonsDelete(w http.ResponseWriter, r *http.Request, courseId int, sectionId int, lessonId int) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Получить информацию об одном уроке
+// (GET /courses/{courseId}/sections/{sectionId}/lessons/{lessonId})
+func (_ Unimplemented) LessonsGetById(w http.ResponseWriter, r *http.Request, courseId int, sectionId int, lessonId int) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Обновить урок (для преподавателей/админов)
+// (PATCH /courses/{courseId}/sections/{sectionId}/lessons/{lessonId})
+func (_ Unimplemented) LessonsUpdate(w http.ResponseWriter, r *http.Request, courseId int, sectionId int, lessonId int) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
 // Обновить прогресс урока
 // (PATCH /me/courses/{courseId}/lessons/{lessonId}/progress)
-func (_ Unimplemented) PatchMeCoursesCourseIdLessonsLessonIdProgress(w http.ResponseWriter, r *http.Request, courseId int, lessonId int) {
+func (_ Unimplemented) ProgressUpdateLessonProgress(w http.ResponseWriter, r *http.Request, courseId int, lessonId int) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
 // Прогресс пользователя по всем курсам
 // (GET /me/progress)
-func (_ Unimplemented) GetMeProgress(w http.ResponseWriter, r *http.Request) {
+func (_ Unimplemented) ProgressGetUserProgress(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -269,11 +543,11 @@ type ServerInterfaceWrapper struct {
 
 type MiddlewareFunc func(http.Handler) http.Handler
 
-// PostAuthLogin operation middleware
-func (siw *ServerInterfaceWrapper) PostAuthLogin(w http.ResponseWriter, r *http.Request) {
+// AuthLoginUser operation middleware
+func (siw *ServerInterfaceWrapper) AuthLoginUser(w http.ResponseWriter, r *http.Request) {
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.PostAuthLogin(w, r)
+		siw.Handler.AuthLoginUser(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -283,11 +557,11 @@ func (siw *ServerInterfaceWrapper) PostAuthLogin(w http.ResponseWriter, r *http.
 	handler.ServeHTTP(w, r)
 }
 
-// PostAuthRegister operation middleware
-func (siw *ServerInterfaceWrapper) PostAuthRegister(w http.ResponseWriter, r *http.Request) {
+// AuthRegisterUser operation middleware
+func (siw *ServerInterfaceWrapper) AuthRegisterUser(w http.ResponseWriter, r *http.Request) {
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.PostAuthRegister(w, r)
+		siw.Handler.AuthRegisterUser(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -297,13 +571,13 @@ func (siw *ServerInterfaceWrapper) PostAuthRegister(w http.ResponseWriter, r *ht
 	handler.ServeHTTP(w, r)
 }
 
-// GetCourses operation middleware
-func (siw *ServerInterfaceWrapper) GetCourses(w http.ResponseWriter, r *http.Request) {
+// CoursesList operation middleware
+func (siw *ServerInterfaceWrapper) CoursesList(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 
 	// Parameter object where we will unmarshal all parameters from the context
-	var params GetCoursesParams
+	var params CoursesListParams
 
 	// ------------- Optional query parameter "page" -------------
 
@@ -337,8 +611,16 @@ func (siw *ServerInterfaceWrapper) GetCourses(w http.ResponseWriter, r *http.Req
 		return
 	}
 
+	// ------------- Optional query parameter "search" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "search", r.URL.Query(), &params.Search)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "search", Err: err})
+		return
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetCourses(w, r, params)
+		siw.Handler.CoursesList(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -348,8 +630,8 @@ func (siw *ServerInterfaceWrapper) GetCourses(w http.ResponseWriter, r *http.Req
 	handler.ServeHTTP(w, r)
 }
 
-// PostCourses operation middleware
-func (siw *ServerInterfaceWrapper) PostCourses(w http.ResponseWriter, r *http.Request) {
+// CoursesCreate operation middleware
+func (siw *ServerInterfaceWrapper) CoursesCreate(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 
@@ -358,7 +640,7 @@ func (siw *ServerInterfaceWrapper) PostCourses(w http.ResponseWriter, r *http.Re
 	r = r.WithContext(ctx)
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.PostCourses(w, r)
+		siw.Handler.CoursesCreate(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -368,33 +650,8 @@ func (siw *ServerInterfaceWrapper) PostCourses(w http.ResponseWriter, r *http.Re
 	handler.ServeHTTP(w, r)
 }
 
-// GetCoursesCourseId operation middleware
-func (siw *ServerInterfaceWrapper) GetCoursesCourseId(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-
-	// ------------- Path parameter "courseId" -------------
-	var courseId int
-
-	err = runtime.BindStyledParameterWithOptions("simple", "courseId", chi.URLParam(r, "courseId"), &courseId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "courseId", Err: err})
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetCoursesCourseId(w, r, courseId)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// PostCoursesCourseIdEnroll operation middleware
-func (siw *ServerInterfaceWrapper) PostCoursesCourseIdEnroll(w http.ResponseWriter, r *http.Request) {
+// CoursesDelete operation middleware
+func (siw *ServerInterfaceWrapper) CoursesDelete(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 
@@ -414,7 +671,7 @@ func (siw *ServerInterfaceWrapper) PostCoursesCourseIdEnroll(w http.ResponseWrit
 	r = r.WithContext(ctx)
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.PostCoursesCourseIdEnroll(w, r, courseId)
+		siw.Handler.CoursesDelete(w, r, courseId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -424,8 +681,8 @@ func (siw *ServerInterfaceWrapper) PostCoursesCourseIdEnroll(w http.ResponseWrit
 	handler.ServeHTTP(w, r)
 }
 
-// GetCoursesCourseIdSections operation middleware
-func (siw *ServerInterfaceWrapper) GetCoursesCourseIdSections(w http.ResponseWriter, r *http.Request) {
+// CoursesGetById operation middleware
+func (siw *ServerInterfaceWrapper) CoursesGetById(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 
@@ -439,7 +696,7 @@ func (siw *ServerInterfaceWrapper) GetCoursesCourseIdSections(w http.ResponseWri
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetCoursesCourseIdSections(w, r, courseId)
+		siw.Handler.CoursesGetById(w, r, courseId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -449,8 +706,501 @@ func (siw *ServerInterfaceWrapper) GetCoursesCourseIdSections(w http.ResponseWri
 	handler.ServeHTTP(w, r)
 }
 
-// PatchMeCoursesCourseIdLessonsLessonIdProgress operation middleware
-func (siw *ServerInterfaceWrapper) PatchMeCoursesCourseIdLessonsLessonIdProgress(w http.ResponseWriter, r *http.Request) {
+// CoursesUpdate operation middleware
+func (siw *ServerInterfaceWrapper) CoursesUpdate(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "courseId" -------------
+	var courseId int
+
+	err = runtime.BindStyledParameterWithOptions("simple", "courseId", chi.URLParam(r, "courseId"), &courseId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "courseId", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CoursesUpdate(w, r, courseId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// EnrollmentsEnrollInCourse operation middleware
+func (siw *ServerInterfaceWrapper) EnrollmentsEnrollInCourse(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "courseId" -------------
+	var courseId int
+
+	err = runtime.BindStyledParameterWithOptions("simple", "courseId", chi.URLParam(r, "courseId"), &courseId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "courseId", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.EnrollmentsEnrollInCourse(w, r, courseId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CoursesGetSections operation middleware
+func (siw *ServerInterfaceWrapper) CoursesGetSections(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "courseId" -------------
+	var courseId int
+
+	err = runtime.BindStyledParameterWithOptions("simple", "courseId", chi.URLParam(r, "courseId"), &courseId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "courseId", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CoursesGetSectionsParams
+
+	// ------------- Optional query parameter "includeUnpublished" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "includeUnpublished", r.URL.Query(), &params.IncludeUnpublished)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "includeUnpublished", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CoursesGetSections(w, r, courseId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CoursesCreateSection operation middleware
+func (siw *ServerInterfaceWrapper) CoursesCreateSection(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "courseId" -------------
+	var courseId int
+
+	err = runtime.BindStyledParameterWithOptions("simple", "courseId", chi.URLParam(r, "courseId"), &courseId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "courseId", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CoursesCreateSection(w, r, courseId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SectionsDelete operation middleware
+func (siw *ServerInterfaceWrapper) SectionsDelete(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "courseId" -------------
+	var courseId int
+
+	err = runtime.BindStyledParameterWithOptions("simple", "courseId", chi.URLParam(r, "courseId"), &courseId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "courseId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "sectionId" -------------
+	var sectionId int
+
+	err = runtime.BindStyledParameterWithOptions("simple", "sectionId", chi.URLParam(r, "sectionId"), &sectionId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "sectionId", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SectionsDelete(w, r, courseId, sectionId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SectionsGetById operation middleware
+func (siw *ServerInterfaceWrapper) SectionsGetById(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "courseId" -------------
+	var courseId int
+
+	err = runtime.BindStyledParameterWithOptions("simple", "courseId", chi.URLParam(r, "courseId"), &courseId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "courseId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "sectionId" -------------
+	var sectionId int
+
+	err = runtime.BindStyledParameterWithOptions("simple", "sectionId", chi.URLParam(r, "sectionId"), &sectionId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "sectionId", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SectionsGetById(w, r, courseId, sectionId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SectionsUpdate operation middleware
+func (siw *ServerInterfaceWrapper) SectionsUpdate(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "courseId" -------------
+	var courseId int
+
+	err = runtime.BindStyledParameterWithOptions("simple", "courseId", chi.URLParam(r, "courseId"), &courseId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "courseId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "sectionId" -------------
+	var sectionId int
+
+	err = runtime.BindStyledParameterWithOptions("simple", "sectionId", chi.URLParam(r, "sectionId"), &sectionId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "sectionId", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SectionsUpdate(w, r, courseId, sectionId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SectionsGetLessons operation middleware
+func (siw *ServerInterfaceWrapper) SectionsGetLessons(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "courseId" -------------
+	var courseId int
+
+	err = runtime.BindStyledParameterWithOptions("simple", "courseId", chi.URLParam(r, "courseId"), &courseId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "courseId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "sectionId" -------------
+	var sectionId int
+
+	err = runtime.BindStyledParameterWithOptions("simple", "sectionId", chi.URLParam(r, "sectionId"), &sectionId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "sectionId", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params SectionsGetLessonsParams
+
+	// ------------- Optional query parameter "publishedOnly" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "publishedOnly", r.URL.Query(), &params.PublishedOnly)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "publishedOnly", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SectionsGetLessons(w, r, courseId, sectionId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SectionsCreateLesson operation middleware
+func (siw *ServerInterfaceWrapper) SectionsCreateLesson(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "courseId" -------------
+	var courseId int
+
+	err = runtime.BindStyledParameterWithOptions("simple", "courseId", chi.URLParam(r, "courseId"), &courseId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "courseId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "sectionId" -------------
+	var sectionId int
+
+	err = runtime.BindStyledParameterWithOptions("simple", "sectionId", chi.URLParam(r, "sectionId"), &sectionId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "sectionId", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SectionsCreateLesson(w, r, courseId, sectionId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// LessonsDelete operation middleware
+func (siw *ServerInterfaceWrapper) LessonsDelete(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "courseId" -------------
+	var courseId int
+
+	err = runtime.BindStyledParameterWithOptions("simple", "courseId", chi.URLParam(r, "courseId"), &courseId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "courseId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "sectionId" -------------
+	var sectionId int
+
+	err = runtime.BindStyledParameterWithOptions("simple", "sectionId", chi.URLParam(r, "sectionId"), &sectionId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "sectionId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "lessonId" -------------
+	var lessonId int
+
+	err = runtime.BindStyledParameterWithOptions("simple", "lessonId", chi.URLParam(r, "lessonId"), &lessonId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "lessonId", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.LessonsDelete(w, r, courseId, sectionId, lessonId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// LessonsGetById operation middleware
+func (siw *ServerInterfaceWrapper) LessonsGetById(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "courseId" -------------
+	var courseId int
+
+	err = runtime.BindStyledParameterWithOptions("simple", "courseId", chi.URLParam(r, "courseId"), &courseId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "courseId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "sectionId" -------------
+	var sectionId int
+
+	err = runtime.BindStyledParameterWithOptions("simple", "sectionId", chi.URLParam(r, "sectionId"), &sectionId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "sectionId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "lessonId" -------------
+	var lessonId int
+
+	err = runtime.BindStyledParameterWithOptions("simple", "lessonId", chi.URLParam(r, "lessonId"), &lessonId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "lessonId", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.LessonsGetById(w, r, courseId, sectionId, lessonId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// LessonsUpdate operation middleware
+func (siw *ServerInterfaceWrapper) LessonsUpdate(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "courseId" -------------
+	var courseId int
+
+	err = runtime.BindStyledParameterWithOptions("simple", "courseId", chi.URLParam(r, "courseId"), &courseId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "courseId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "sectionId" -------------
+	var sectionId int
+
+	err = runtime.BindStyledParameterWithOptions("simple", "sectionId", chi.URLParam(r, "sectionId"), &sectionId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "sectionId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "lessonId" -------------
+	var lessonId int
+
+	err = runtime.BindStyledParameterWithOptions("simple", "lessonId", chi.URLParam(r, "lessonId"), &lessonId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "lessonId", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.LessonsUpdate(w, r, courseId, sectionId, lessonId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ProgressUpdateLessonProgress operation middleware
+func (siw *ServerInterfaceWrapper) ProgressUpdateLessonProgress(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 
@@ -479,7 +1229,7 @@ func (siw *ServerInterfaceWrapper) PatchMeCoursesCourseIdLessonsLessonIdProgress
 	r = r.WithContext(ctx)
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.PatchMeCoursesCourseIdLessonsLessonIdProgress(w, r, courseId, lessonId)
+		siw.Handler.ProgressUpdateLessonProgress(w, r, courseId, lessonId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -489,8 +1239,8 @@ func (siw *ServerInterfaceWrapper) PatchMeCoursesCourseIdLessonsLessonIdProgress
 	handler.ServeHTTP(w, r)
 }
 
-// GetMeProgress operation middleware
-func (siw *ServerInterfaceWrapper) GetMeProgress(w http.ResponseWriter, r *http.Request) {
+// ProgressGetUserProgress operation middleware
+func (siw *ServerInterfaceWrapper) ProgressGetUserProgress(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 
@@ -499,7 +1249,7 @@ func (siw *ServerInterfaceWrapper) GetMeProgress(w http.ResponseWriter, r *http.
 	r = r.WithContext(ctx)
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetMeProgress(w, r)
+		siw.Handler.ProgressGetUserProgress(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -623,31 +1373,64 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	}
 
 	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/auth/login", wrapper.PostAuthLogin)
+		r.Post(options.BaseURL+"/auth/login", wrapper.AuthLoginUser)
 	})
 	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/auth/register", wrapper.PostAuthRegister)
+		r.Post(options.BaseURL+"/auth/register", wrapper.AuthRegisterUser)
 	})
 	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/courses", wrapper.GetCourses)
+		r.Get(options.BaseURL+"/courses", wrapper.CoursesList)
 	})
 	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/courses", wrapper.PostCourses)
+		r.Post(options.BaseURL+"/courses", wrapper.CoursesCreate)
 	})
 	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/courses/{courseId}", wrapper.GetCoursesCourseId)
+		r.Delete(options.BaseURL+"/courses/{courseId}", wrapper.CoursesDelete)
 	})
 	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/courses/{courseId}/enroll", wrapper.PostCoursesCourseIdEnroll)
+		r.Get(options.BaseURL+"/courses/{courseId}", wrapper.CoursesGetById)
 	})
 	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/courses/{courseId}/sections", wrapper.GetCoursesCourseIdSections)
+		r.Patch(options.BaseURL+"/courses/{courseId}", wrapper.CoursesUpdate)
 	})
 	r.Group(func(r chi.Router) {
-		r.Patch(options.BaseURL+"/me/courses/{courseId}/lessons/{lessonId}/progress", wrapper.PatchMeCoursesCourseIdLessonsLessonIdProgress)
+		r.Post(options.BaseURL+"/courses/{courseId}/enroll", wrapper.EnrollmentsEnrollInCourse)
 	})
 	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/me/progress", wrapper.GetMeProgress)
+		r.Get(options.BaseURL+"/courses/{courseId}/sections", wrapper.CoursesGetSections)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/courses/{courseId}/sections", wrapper.CoursesCreateSection)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/courses/{courseId}/sections/{sectionId}", wrapper.SectionsDelete)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/courses/{courseId}/sections/{sectionId}", wrapper.SectionsGetById)
+	})
+	r.Group(func(r chi.Router) {
+		r.Patch(options.BaseURL+"/courses/{courseId}/sections/{sectionId}", wrapper.SectionsUpdate)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/courses/{courseId}/sections/{sectionId}/lessons", wrapper.SectionsGetLessons)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/courses/{courseId}/sections/{sectionId}/lessons", wrapper.SectionsCreateLesson)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/courses/{courseId}/sections/{sectionId}/lessons/{lessonId}", wrapper.LessonsDelete)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/courses/{courseId}/sections/{sectionId}/lessons/{lessonId}", wrapper.LessonsGetById)
+	})
+	r.Group(func(r chi.Router) {
+		r.Patch(options.BaseURL+"/courses/{courseId}/sections/{sectionId}/lessons/{lessonId}", wrapper.LessonsUpdate)
+	})
+	r.Group(func(r chi.Router) {
+		r.Patch(options.BaseURL+"/me/courses/{courseId}/lessons/{lessonId}/progress", wrapper.ProgressUpdateLessonProgress)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/me/progress", wrapper.ProgressGetUserProgress)
 	})
 
 	return r

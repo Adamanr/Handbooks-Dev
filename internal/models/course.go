@@ -2,72 +2,189 @@ package models
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"time"
 
 	"github.com/gosimple/slug"
+	"github.com/huandu/go-sqlbuilder"
 	"github.com/jackc/pgx/v5"
 )
 
 type Course struct {
-    ID          uint
-    Slug        string
-    Title       string
-    Subtitle    string
-    Description string
-    CoverURL    string
-    Status      string     // draft, published, archived
-    Price       float64
-    Currency    string
-    Level       string     // beginner, intermediate, advanced
-    CreatedAt   time.Time
-    UpdatedAt   time.Time
+	ID          uint      `db:"id"`
+	Slug        string    `db:"slug"`
+	Title       string    `db:"title"`
+	Subtitle    string    `db:"subtitle"`
+	Description string    `db:"description"`
+	CoverURL    string    `db:"cover_url"`
+	Status      string    `db:"status"` // draft, published, archived
+	Price       float64   `db:"price"`
+	Currency    string    `db:"currency"`
+	Level       string    `db:"level"` // beginner, intermediate, advanced
+	CreatedAt   time.Time `db:"created_at"`
+	UpdatedAt   time.Time `db:"updated_at"`
+	CreatedByID uint      `db:"created_by_id"`
 
-    CreatedByID uint
-    CreatedBy   User
+	CreatedBy User `db:"-"` // не маппится в БД
 }
 
-func (c *Course) GetAllCourses(ctx context.Context, db *pgx.Conn, logger *slog.Logger) ([]Course, error) {
-	rows, err := db.Query(ctx, "SELECT * FROM courses")
-	if err!=nil{
-		logger.Error("cant get courses", slog.String("error", err.Error()))
+const (
+	tableCourses = "courses"
+)
+
+var ErrorCourseNotFound = errors.New("course not found")
+
+var courseStruct = sqlbuilder.NewStruct(Course{}).
+	For(sqlbuilder.PostgreSQL)
+
+// GetAllCourses — Получение всех курсов
+func (c *Course) GetAllCourses(ctx context.Context, db Querier, opts ...func(*sqlbuilder.SelectBuilder)) ([]Course, error) {
+	sb := courseStruct.SelectFrom(tableCourses)
+
+	sb.From(tableCourses)
+
+	// Применяем все переданные модификаторы (фильтры, сортировки, лимиты, offset…)
+	if len(opts) != 0 {
+		for _, opt := range opts {
+			opt(sb)
+		}
+	}
+
+	sb.OrderByDesc("created_at")
+
+	query, args := sb.Build()
+
+	rows, err := db.Query(ctx, query, args...)
+	if err != nil {
+		slog.ErrorContext(ctx, "cannot execute get all courses query",
+			slog.String("query", query),
+			slog.Any("args", args),
+			slog.String("error", err.Error()),
+		)
+		return nil, err
+	}
+	defer rows.Close()
+
+	courses, err := pgx.CollectRows(rows, pgx.RowToStructByNameLax[Course])
+	if err != nil {
+		slog.ErrorContext(ctx, "cannot scan courses",
+			slog.String("query", query),
+			slog.String("error", err.Error()),
+		)
 		return nil, err
 	}
 
-	data,err := pgx.CollectRows(rows, pgx.RowToStructByName[Course])
-	if err!=nil{
-		logger.Error("cant get courses", slog.String("error", err.Error()))
-		return nil, err
-	}
-
-	return data, nil
+	return courses, nil
 }
 
-func (c *Course) CreateCourse(ctx context.Context, db *pgx.Conn, logger *slog.Logger) (uint, error){
-	if err:=db.QueryRow(ctx, "INSERT INTO courses(slug, title, subtitle, description, cover_url, status, price, currency, level, created_at, updated_at) values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING id", slug.Make(c.Title), c.Title,c.Subtitle,c.Description,c.CoverURL,c.Status,c.Price,c.Currency,c.Level,c.CreatedAt,c.UpdatedAt).Scan(&c.ID);err!=nil{
-		logger.Error("cant create course", slog.String("error", err.Error()))
-		return 0, err
+// GetCourseByID — получение одного курса по ID
+func (c *Course) GetCourseByID(ctx context.Context, db Querier) error {
+	if c.ID == 0 {
+		return errors.New("course ID is required")
 	}
+	sb := courseStruct.SelectFrom(tableCourses)
+	sb.Select(courseStruct.Columns()...)
+	sb.From(tableLessons)
+	sb.Where(sb.Equal("id", c.ID))
+	sb.Limit(1)
 
-	return c.ID, nil
-}
+	query, args := sb.Build()
 
-func (c *Course) UpdateCourse(ctx context.Context, db *pgx.Conn, logger *slog.Logger) error {
-	if _,err:=db.Exec(ctx, "UPDATE courses SET slug = $1, title = $2, subtitle = $3, description = $4, cover_url = $5, status = $6, price = $7, currency = $8, level = $9, created_at = $10, updated_at = $11 WHERE id = $12", slug.Make(c.Title), c.Title,c.Subtitle,c.Description,c.CoverURL,c.Status,c.Price,c.Currency,c.Level,c.CreatedAt,c.UpdatedAt, c.ID);err!=nil{
-		logger.Error("cant update course", slog.Any("id", c.ID), slog.String("error", err.Error()))
+	row := db.QueryRow(ctx, query, args...)
+
+	if err := row.Scan(courseStruct.Addr(c)...); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrNotFound
+		}
+		slog.ErrorContext(ctx, "cannot get course by id",
+			slog.Any("id", c.ID),
+			slog.String("query", query),
+			slog.String("error", err.Error()),
+		)
 		return err
 	}
 
 	return nil
 }
 
-func (c *Course) DeleteCourse(ctx context.Context, db *pgx.Conn, logger *slog.Logger) error{
-	if _,err := db.Exec(ctx, "DELETE FROM courses WHERE ID = $1", c.ID);err!=nil{
-		logger.Error("cant delete course ", slog.Any("id", c.ID), slog.String("error", err.Error()))
+// CreateCourse — Создание курса
+func (c *Course) CreateCourse(ctx context.Context, db Querier) error {
+	now := time.Now()
+
+	c.Slug = slug.Make(c.Title)
+	c.CreatedAt = now
+	c.UpdatedAt = now
+	c.CreatedByID = 3
+
+	sb := courseStruct.WithoutTag("db", "-").InsertInto(tableCourses, c)
+	sb.SetFlavor(sqlbuilder.PostgreSQL)
+	sb.Returning("id")
+
+	query, args := sb.Build()
+
+	var id uint
+	err := db.QueryRow(ctx, query, args...).Scan(&id)
+	if err != nil {
+		slog.ErrorContext(ctx, "cannot create course",
+			slog.String("title", c.Title),
+			slog.String("query", query),
+			slog.Any("args", args),
+			slog.String("error", err.Error()),
+		)
+		return err
+	}
+
+	c.ID = id
+	return nil
+}
+
+// UpdateCourse — Изменение курса
+func (c *Course) UpdateCourse(ctx context.Context, db Querier) error {
+	if c.ID == 0 {
+		return ErrorCourseNotFound
+	}
+
+	c.Slug = slug.Make(c.Title)
+	c.UpdatedAt = time.Now()
+
+	sb := courseStruct.WithoutTag("db", "-").Update(tableCourses, c)
+	sb.Where(sb.Equal("id", c.ID))
+
+	query, args := sb.Build()
+
+	_, err := db.Exec(ctx, query, args...)
+	if err != nil {
+		slog.ErrorContext(ctx, "cannot update course",
+			slog.Any("id", c.ID),
+			slog.String("query", query),
+			slog.String("error", err.Error()),
+		)
 		return err
 	}
 
 	return nil
 }
 
-func (c * Course)
+// DeleteCourse — Удаление курса
+func (c *Course) DeleteCourse(ctx context.Context, db Querier) error {
+	if c.ID == 0 {
+		return ErrorCourseNotFound
+	}
+
+	sb := sqlbuilder.DeleteFrom(tableCourses).
+		Where(sqlbuilder.NewCond().Equal("id", c.ID))
+
+	query, args := sb.Build()
+
+	_, err := db.Exec(ctx, query, args...)
+	if err != nil {
+		slog.ErrorContext(ctx, "cannot delete course",
+			slog.Any("id", c.ID),
+			slog.String("error", err.Error()),
+		)
+		return err
+	}
+
+	return nil
+}

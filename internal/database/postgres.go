@@ -2,19 +2,23 @@ package database
 
 import (
 	"context"
-	"fmt"
-	"os"
+	"log/slog"
 
 	"github.com/jackc/pgx/v5"
 )
 
-func NewDatabase(ctx context.Context, url string) *pgx.Conn {
+// NewDatabase - Functions for create new connections for database
+func NewDatabase(ctx context.Context, url string) (*pgx.Conn, error) {
 	conn, err := pgx.Connect(ctx, url)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
-		os.Exit(1)
+		slog.ErrorContext(ctx, "Unable to connect to database", slog.String("Error", err.Error()))
+		return nil, err
 	}
-	// defer conn.Close(context.Background())
 
-	return conn
+	if err := conn.Ping(ctx); err != nil {
+		slog.ErrorContext(ctx, "Error database ping", slog.String("Error", err.Error()))
+		return nil, err
+	}
+
+	return conn, nil
 }

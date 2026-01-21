@@ -13,7 +13,7 @@
           go
           goose
           oapi-codegen
-          bun
+          golangci-lint
         ];
 
         shellHook = ''

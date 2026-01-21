@@ -72,11 +72,70 @@ components:
         createdAt:
           type: string
           format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CourseCreate:
+      type: object
+      required: [title, slug]
+      properties:
+        title:
+          type: string
+          minLength: 3
+        slug:
+          type: string
+          pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        subtitle:
+          type: string
+        description:
+          type: string
+        coverUrl:
+          type: string
+          format: uri
+        price:
+          type: number
+          minimum: 0
+        currency:
+          type: string
+          example: EUR
+        level:
+          type: string
+          enum: [beginner, intermediate, advanced]
+
+    CourseUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+        slug:
+          type: string
+        subtitle:
+          type: string
+        description:
+          type: string
+        coverUrl:
+          type: string
+          format: uri
+        status:
+          type: string
+          enum: [draft, published, archived]
+        price:
+          type: number
+          minimum: 0
+        currency:
+          type: string
+        level:
+          type: string
+          enum: [beginner, intermediate, advanced]
 
     Section:
       type: object
       properties:
         id:
+          type: integer
+          format: int64
+        courseId:
           type: integer
           format: int64
         title:
@@ -88,6 +147,39 @@ components:
         estimatedTime:
           type: integer
           description: minutes
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    SectionCreate:
+      type: object
+      required: [title, order]
+      properties:
+        title:
+          type: string
+        order:
+          type: integer
+        isFreePreview:
+          type: boolean
+          default: false
+        estimatedTime:
+          type: integer
+          description: minutes
+
+    SectionUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+        order:
+          type: integer
+        isFreePreview:
+          type: boolean
+        estimatedTime:
+          type: integer
 
     Lesson:
       type: object
@@ -95,16 +187,65 @@ components:
         id:
           type: integer
           format: int64
+        sectionId:
+          type: integer
+          format: int64
         title:
           type: string
         type:
           type: string
           enum: [video, text, quiz, assignment, pdf, coding, embed]
+        content:
+          type: string
+          description: URL видео, текст, markdown, JSON для quiz и т.д.
+        order:
+          type: integer
+          description: Порядковый номер урока внутри раздела
+        durationSec:
+          type: integer
+          nullable: true
+        isPublished:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    LessonCreate:
+      type: object
+      required: [title, type, order]
+      properties:
+        title:
+          type: string
+        type:
+          type: string
+          enum: [video, text, quiz, assignment, pdf, coding, embed]
+        content:
+          type: string
         order:
           type: integer
         durationSec:
           type: integer
-          nullable: true
+        isPublished:
+          type: boolean
+          default: false
+
+    LessonUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+        type:
+          type: string
+          enum: [video, text, quiz, assignment, pdf, coding, embed]
+        content:
+          type: string
+        order:
+          type: integer
+        durationSec:
+          type: integer
         isPublished:
           type: boolean
 
@@ -142,6 +283,7 @@ components:
 paths:
   /auth/register:
     post:
+      operationId: authRegisterUser
       summary: Регистрация нового пользователя
       tags: [Auth]
       requestBody:
@@ -171,6 +313,7 @@ paths:
 
   /auth/login:
     post:
+      operationId: authLoginUser
       summary: Авторизация пользователя
       tags: [Auth]
       requestBody:
@@ -198,7 +341,8 @@ paths:
 
   /courses:
     get:
-      summary: Список всех опубликованных курсов
+      operationId: coursesList
+      summary: Список всех опубликованных курсов (для всех пользователей)
       tags: [Courses]
       parameters:
         - name: page
@@ -219,6 +363,11 @@ paths:
           in: query
           schema:
             type: string
+        - name: search
+          in: query
+          schema:
+            type: string
+          description: Поиск по названию или описанию
       responses:
         "200":
           description: Список курсов
@@ -237,8 +386,11 @@ paths:
                     type: integer
                   limit:
                     type: integer
+        "400":
+          description: Некорректные параметры запроса
 
     post:
+      operationId: coursesCreate
       summary: Создание нового курса (только для преподавателей и админов)
       tags: [Courses]
       security:
@@ -248,26 +400,26 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required: [title, slug]
-              properties:
-                title: { type: string }
-                slug: { type: string }
-                subtitle: { type: string }
-                description: { type: string }
-                price: { type: number }
-                currency: { type: string }
-                level: { type: string }
+              $ref: "#/components/schemas/CourseCreate"
       responses:
         "201":
-          description: Курс создан
+          description: Курс успешно создан
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Course"
+        "400":
+          description: Некорректные данные (например, slug уже занят)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Недостаточно прав
 
   /courses/{courseId}:
     get:
+      operationId: coursesGetById
       summary: Получить подробную информацию о курсе
       tags: [Courses]
       parameters:
@@ -283,11 +435,55 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Course"
+        "404":
+          description: Курс не найден
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
-  /courses/{courseId}/sections:
-    get:
-      summary: Получить все разделы курса
-      tags: [Content]
+    patch:
+      operationId: coursesUpdate
+      summary: Частично обновить курс (для преподавателей и админов)
+      tags: [Courses]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: courseId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CourseUpdate"
+      responses:
+        "200":
+          description: Курс обновлён
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Course"
+        "400":
+          description: Некорректные данные
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Нет прав на редактирование этого курса
+        "404":
+          description: Курс не найден
+
+    delete:
+      operationId: coursesDelete
+      summary: Удалить курс (только для админов или владельца)
+      tags: [Courses]
+      security:
+        - BearerAuth: []
       parameters:
         - name: courseId
           in: path
@@ -295,17 +491,367 @@ paths:
           schema:
             type: integer
       responses:
+        "204":
+          description: Курс успешно удалён
+        "403":
+          description: Нет прав на удаление (например, курс имеет активных студентов)
+        "404":
+          description: Курс не найден
+
+  /courses/{courseId}/sections:
+    get:
+      operationId: coursesGetSections
+      summary: Получить все разделы курса
+      tags: [Sections]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: courseId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: includeUnpublished
+          in: query
+          schema:
+            type: boolean
+            default: false
+          description: Включать неопубликованные разделы (для авторов курса)
+      responses:
         "200":
-          description: Список разделов
+          description: Список разделов курса
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: "#/components/schemas/Section"
+        "404":
+          description: Курс не найден
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    post:
+      operationId: coursesCreateSection
+      summary: Создать новый раздел в курсе (для преподавателей/админов)
+      tags: [Sections]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: courseId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SectionCreate"
+      responses:
+        "201":
+          description: Раздел успешно создан
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Section"
+        "400":
+          description: Некорректные данные (например, order уже занят)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Нет прав на создание раздела в этом курсе
+        "404":
+          description: Курс не найден
+
+  /courses/{courseId}/sections/{sectionId}:
+    get:
+      operationId: sectionsGetById
+      summary: Получить информацию об одном разделе курса
+      tags: [Sections]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: courseId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: sectionId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Детали раздела
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Section"
+        "403":
+          description: Нет доступа (раздел скрыт и пользователь не автор)
+        "404":
+          description: Раздел или курс не найден
+
+    patch:
+      operationId: sectionsUpdate
+      summary: Обновить раздел (для преподавателей/админов)
+      tags: [Sections]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: courseId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: sectionId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SectionUpdate"
+      responses:
+        "200":
+          description: Раздел обновлён
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Section"
+        "400":
+          description: Некорректные данные
+        "403":
+          description: Нет прав на редактирование
+        "404":
+          description: Раздел или курс не найден
+
+    delete:
+      operationId: sectionsDelete
+      summary: Удалить раздел (для преподавателей/админов)
+      tags: [Sections]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: courseId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: sectionId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Раздел успешно удалён
+        "403":
+          description: Нет прав на удаление (например, в разделе есть уроки)
+        "404":
+          description: Раздел или курс не найден
+
+  /courses/{courseId}/sections/{sectionId}/lessons:
+    get:
+      operationId: sectionsGetLessons
+      summary: Получить список всех уроков в разделе курса
+      tags: [Lessons]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: courseId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: sectionId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: publishedOnly
+          in: query
+          schema:
+            type: boolean
+            default: true
+          description: Показывать только опубликованные уроки (для студентов)
+      responses:
+        "200":
+          description: Список уроков раздела
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Lesson"
+        "404":
+          description: Курс или раздел не найден
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    post:
+      operationId: sectionsCreateLesson
+      summary: Создать новый урок в разделе (для преподавателей/админов)
+      tags: [Lessons]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: courseId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: sectionId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LessonCreate"
+      responses:
+        "201":
+          description: Урок успешно создан
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Lesson"
+        "400":
+          description: Некорректные данные
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Нет прав на создание урока в этом курсе
+        "404":
+          description: Курс или раздел не найден
+
+  /courses/{courseId}/sections/{sectionId}/lessons/{lessonId}:
+    get:
+      operationId: lessonsGetById
+      summary: Получить информацию об одном уроке
+      tags: [Lessons]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: courseId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: sectionId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: lessonId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Детали урока
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Lesson"
+        "403":
+          description: Нет доступа (например, урок не опубликован и пользователь не автор курса)
+        "404":
+          description: Урок не найден
+
+    patch:
+      operationId: lessonsUpdate
+      summary: Обновить урок (для преподавателей/админов)
+      tags: [Lessons]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: courseId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: sectionId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: lessonId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LessonUpdate"
+      responses:
+        "200":
+          description: Урок обновлён
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Lesson"
+        "400":
+          description: Некорректные данные
+        "403":
+          description: Нет прав на редактирование
+        "404":
+          description: Урок не найден
+
+    delete:
+      operationId: lessonsDelete
+      summary: Удалить урок (для преподавателей/админов)
+      tags: [Lessons]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: courseId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: sectionId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: lessonId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Урок успешно удалён
+        "403":
+          description: Нет прав на удаление
+        "404":
+          description: Урок не найден
 
   /courses/{courseId}/enroll:
     post:
+      operationId: enrollmentsEnrollInCourse
       summary: Записаться на курс / купить курс
       tags: [Enrollments]
       security:
@@ -339,6 +885,7 @@ paths:
 
   /me/progress:
     get:
+      operationId: progressGetUserProgress
       summary: Прогресс пользователя по всем курсам
       tags: [Progress]
       security:
@@ -359,6 +906,7 @@ paths:
 
   /me/courses/{courseId}/lessons/{lessonId}/progress:
     patch:
+      operationId: progressUpdateLessonProgress
       summary: Обновить прогресс урока
       tags: [Progress]
       security:
