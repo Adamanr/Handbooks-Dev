@@ -43,13 +43,13 @@ func (c *Course) GetAllCourses(ctx context.Context, db Querier, opts ...func(*sq
 	sb := courseStruct.SelectFrom(tableCourses)
 
 	sb.From(tableCourses)
-
+	// TODO: расскоментить и исправить
 	// Применяем все переданные модификаторы (фильтры, сортировки, лимиты, offset…)
-	if len(opts) != 0 {
-		for _, opt := range opts {
-			opt(sb)
-		}
-	}
+	// if opts!=nil {
+	// 	for _, opt := range opts {
+	// 		opt(sb)
+	// 	}
+	// }
 
 	sb.OrderByDesc("created_at")
 
