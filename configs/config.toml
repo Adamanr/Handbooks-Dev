@@ -2,10 +2,10 @@
 logLevel = "info"
 
 [database]
-host = "logiflowadvanced.online"
-port = 5432
+host = "localhost"
+port = 5431
 user = "postgres"
-password = "anton123"
+password = "pass1234"
 name = "handbooks"
 sslmode = "disable"
 
