@@ -52,7 +52,7 @@ func (u *User) CreateUser(ctx context.Context, db Querier) (uint, error) {
 	}
 	u.PasswordHash = string(pswdhash)
 
-	sb := userStruct.WithoutTag("db", "-").InsertInto(tableUsers, u)
+	sb := userStruct.WithoutTag("db", "id").InsertInto(tableUsers, u)
 	sb.Returning("id")
 
 	query, args := sb.Build()

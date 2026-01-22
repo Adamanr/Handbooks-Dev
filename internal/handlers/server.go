@@ -133,10 +133,6 @@ func (s *Server) AuthLoginUser(w http.ResponseWriter, r *http.Request) {
 		s.JSON(w, r, http.StatusBadRequest, err.Error(), WithType("error"))
 		return
 	}
-	access := s.Redis.Get(ctx, "access_token:"+accessToken).Val()
-	slog.ErrorContext(ctx, "token1", slog.String("access", access))
-	refresh := s.Redis.Get(ctx, "refresh_token:"+refreshToken).Val()
-	slog.ErrorContext(ctx, "token2", slog.String("refresh", refresh))
 	resp := AuthResponse{AccessToken: accessToken, RefreshToken: refreshToken}
 
 	s.JSON(w, r, http.StatusOK, resp, WithType("user"))
@@ -148,11 +144,6 @@ type AuthResponse struct {
 }
 
 func (s *Server) generateToken(ctx context.Context, user models.User, tokenType string) (string, error) {
-
-	if err := user.GetUserByEmail(ctx, s.DB); err != nil {
-		slog.ErrorContext(ctx, "Error getting user", slog.String("error", err.Error()))
-		return "", nil
-	}
 
 	tokenID, err := generateTokenID(&slog.Logger{})
 
