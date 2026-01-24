@@ -94,6 +94,7 @@ func (s *Server) AuthRegisterUser(w http.ResponseWriter, r *http.Request) {
 	s.issueTokens(w, r, &user)
 }
 
+// TODO: пофиксить хуйню с рефреш токенами, при добавлении в заголовок access токена - пишет что его нет, если добавить refresh токен - пишет, что невозможно провалидировать токен, необходимо пофиксить, Артём Павлович
 // AuthRefreshToken implements [api.ServerInterface].
 func (s *Server) AuthRefreshToken(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -174,24 +175,18 @@ func (s *Server) AuthRefreshToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newHash, err := s.hashRefresh(newRefresh)
-	if err != nil {
-		s.JSON(w, r, http.StatusInternalServerError, "Hash error", "error")
-		return
-	}
-
 	if err := s.Redis.Del(ctx, key).Err(); err != nil {
 		slog.ErrorContext(ctx, "redis del old refresh failed", "err", err)
 	}
 
-	if err := s.Redis.Set(ctx, key, newHash, s.Config.RedisRefreshTokenDur()).Err(); err != nil {
+	if err := s.Redis.Set(ctx, key, "Valid", s.Config.RedisRefreshTokenDur()).Err(); err != nil {
 		slog.ErrorContext(ctx, "redis set new refresh failed", "err", err)
 		s.JSON(w, r, http.StatusInternalServerError, "Server error", "error")
 		return
 	}
 
 	access := fmt.Sprintf("access_hash:%d", accessStr)
-	if err := s.Redis.Set(ctx, access, newHash, s.Config.RedisAccessTokenDur()).Err(); err != nil {
+	if err := s.Redis.Set(ctx, access, "Valid", s.Config.RedisAccessTokenDur()).Err(); err != nil {
 		slog.ErrorContext(ctx, "redis set new access failed", "err", err)
 		s.JSON(w, r, http.StatusInternalServerError, "Server error", "error")
 		return
@@ -208,8 +203,8 @@ func (s *Server) AuthRefreshToken(w http.ResponseWriter, r *http.Request) {
 	})
 
 	s.JSON(w, r, http.StatusOK, map[string]any{
-		"access_hash": newAccess,
-		"expires_in":  s.Config.RedisAccessTokenDur(),
+		"access_token": newAccess,
+		"expires_in":   s.Config.RedisAccessTokenDur(),
 	}, "auth")
 }
 
@@ -319,14 +314,8 @@ func (s *Server) issueTokens(w http.ResponseWriter, r *http.Request, user *model
 		return
 	}
 
-	hash, err := s.hashRefresh(refresh)
-	if err != nil {
-		s.JSON(w, r, http.StatusInternalServerError, "Hash error", "error")
-		return
-	}
-
 	key := fmt.Sprintf("refresh_hash:%v", refresh)
-	err = s.Redis.Set(r.Context(), key, hash, s.Config.RedisAccessTokenDur()).Err()
+	err = s.Redis.Set(r.Context(), key, "valid", s.Config.RedisAccessTokenDur()).Err()
 	if err != nil {
 		slog.ErrorContext(r.Context(), "redis set refresh failed", "err", err)
 		s.JSON(w, r, http.StatusInternalServerError, "Server error", "error")
@@ -334,7 +323,7 @@ func (s *Server) issueTokens(w http.ResponseWriter, r *http.Request, user *model
 	}
 
 	accessKey := fmt.Sprintf("access_hash:%v", access)
-	err = s.Redis.Set(r.Context(), accessKey, hash, s.Config.RedisAccessTokenDur()).Err()
+	err = s.Redis.Set(r.Context(), accessKey, "valid", s.Config.RedisAccessTokenDur()).Err()
 	if err != nil {
 		slog.ErrorContext(r.Context(), "redis set access failed", "err", err)
 		s.JSON(w, r, http.StatusInternalServerError, "Server error", "error")
@@ -348,12 +337,12 @@ func (s *Server) issueTokens(w http.ResponseWriter, r *http.Request, user *model
 		Secure:   true,
 		SameSite: http.SameSiteStrictMode,
 		Path:     "/",
-		MaxAge:   14 * 24 * 3600,
+		MaxAge:   7 * 24 * 3600,
 	})
 
 	s.JSON(w, r, http.StatusOK, map[string]any{
-		"access_hash": access,
-		"expires_in":  900, // 15 минут
+		"access_token": access,
+		"expires_in":   86400, // 24 часа
 	}, "auth")
 }
 
@@ -372,11 +361,6 @@ func (s *Server) generateRefreshToken() (string, error) {
 	return hex.EncodeToString(b), nil
 }
 
-func (s *Server) hashRefresh(token string) (string, error) {
-	bytes, err := bcrypt.GenerateFromPassword([]byte(token), 12)
-	return string(bytes), err
-}
-
 func (s *Server) generateJWT(user *models.User, lifetime time.Duration) (string, error) {
 	if len(s.JwtKey) == 0 {
 		return "", errors.New("jwt key not set")
@@ -393,7 +377,7 @@ func (s *Server) generateJWT(user *models.User, lifetime time.Duration) (string,
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(lifetime)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 			Subject:   user.ID.String(),
-			Issuer:    "handbooks-api",
+			Issuer:    s.Config.JwtOpt.Issuer,
 		},
 	}
 
