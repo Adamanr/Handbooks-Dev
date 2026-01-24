@@ -14,7 +14,7 @@ RUN addgroup -g 1000 app && adduser -u 1000 -G app -D -H -s /sbin/nologin app
 
 COPY --from=builder /bin/handbooks /app/handbooks
 COPY --chown=app:app configs/ /app/configs/
-
+COPY --chown=app:app migrations/ /app/migrations/
 USER app
 
 WORKDIR /app

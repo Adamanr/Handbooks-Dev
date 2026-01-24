@@ -46,14 +46,14 @@ func main() {
 
 	postgres, err := database.NewDatabase(ctx, cfg.Database.URL)
 	if err != nil {
-		slog.Error("Ошибка подключения к БД", "err", err)
+		slog.Error("Ошибка подключения к БД postgres", "err", err)
 		os.Exit(1)
 	}
 	defer postgres.Close(ctx)
 
 	redis, err := database.NewRedisConnection(ctx, cfg)
 	if err != nil {
-		slog.Error("Ошибка подключения к БД", "err", err)
+		slog.Error("Ошибка подключения к БД redis", "err", err)
 		os.Exit(1)
 	}
 	defer redis.Close()

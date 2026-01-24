@@ -2,7 +2,7 @@
 logLevel = 1
 
 [database]
-host = "localhost"
+host = "postgres"
 port = 5432
 sslmode = "disable"
 
@@ -14,7 +14,7 @@ writeTimeout = "30s"
 idleTimeout = "60s"
 
 [redis]
-addr = "localhost:6379"
+addr = "redis:6379"
 db = 0
 refreshTokenTTL = "168h"
 accessTokenTTL = "24h"
