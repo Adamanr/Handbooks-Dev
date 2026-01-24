@@ -10,7 +10,7 @@ info:
 servers:
   - url: https://api.courses-platform.com/v1
     description: Production server
-  - url: http://localhost:8080/v1
+  - url: http://localhost:3001
     description: Local development
 
 components:
@@ -21,6 +21,22 @@ components:
       bearerFormat: JWT
 
   schemas:
+    ApiResponse:
+      type: object
+      properties:
+        status:
+          type: integer
+          nullable: false
+        data:
+          type: object
+          nullable: true
+        success:
+          type: boolean
+          nullable: false
+        requestID:
+          type: string
+          nullable: false
+
     User:
       type: object
       properties:
@@ -41,7 +57,67 @@ components:
         createdAt:
           type: string
           format: date-time
+    UserCreate:
+      type: object
+      required: [email, password, fullName]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+        fullName:
+          type: string
+    TokenRefreshRequest:
+      type: object
+      required: [refreshToken]
+      properties:
+        refreshToken:
+          type: string
+          description: Refresh токен, полученный при логине
 
+    TokenResponse:
+      type: object
+      required: [accessToken, refreshToken]
+      properties:
+        accessToken:
+          type: string
+          description: Новый access-токен (JWT)
+        refreshToken:
+          type: string
+          description: Новый refresh-токен (opaque token, rotation)
+        expiresIn:
+          type: integer
+          description: Время жизни access-токена в секундах (например 900 = 15 мин)
+
+    UserUpdate:
+      type: object
+      properties:
+        fullName:
+          type: string
+          minLength: 2
+          maxLength: 100
+        avatarUrl:
+          type: string
+          format: uri
+          nullable: true
+        password:
+          type: string
+          minLength: 8
+          description: Новый пароль (если меняется)
+        currentPassword:
+          type: string
+          minLength: 8
+          description: Текущий пароль (обязателен при смене пароля)
+
+    UserDeleteRequest:
+      type: object
+      required: [password]
+      properties:
+        password:
+          type: string
+          description: Текущий пароль для подтверждения удаления
     Course:
       type: object
       properties:
@@ -291,19 +367,14 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required: [email, password, fullName]
-              properties:
-                email: { type: string, format: email }
-                password: { type: string, minLength: 8 }
-                fullName: { type: string }
+              $ref: "#/components/schemas/UserCreate"
       responses:
         "201":
           description: Пользователь успешно создан
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/User"
+                $ref: "#/components/schemas/ApiResponse"
         "400":
           description: Некорректные данные
           content:
@@ -339,9 +410,166 @@ paths:
                   user:
                     $ref: "#/components/schemas/User"
 
+  /auth/refresh:
+    post:
+      operationId: authRefreshToken
+      summary: Обновление access-токена с помощью refresh-токена (token rotation)
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TokenRefreshRequest"
+      responses:
+        "200":
+          description: Токены успешно обновлены (refresh rotation)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenResponse"
+        "401":
+          description: Недействительный или истёкший refresh-токен
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "400":
+          description: Некорректный запрос (отсутствует refreshToken)
+
+  /me:
+    get:
+      operationId: getCurrentUser
+      summary: Получить информацию о текущем пользователе
+      tags: [Users, Me]
+      responses:
+        "200":
+          description: Информация о пользователе
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          description: Не авторизован
+
+    patch:
+      operationId: updateCurrentUser
+      summary: Обновить данные текущего пользователя (fullName, avatar, пароль)
+      tags: [Users, Me]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserUpdate"
+      responses:
+        "200":
+          description: Пользователь успешно обновлён
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          description: Некорректные данные (например, слабый пароль)
+        "401":
+          description: Не авторизован
+        "403":
+          description: Неверный текущий пароль при смене пароля
+
+    delete:
+      operationId: deleteCurrentUser
+      summary: Удалить аккаунт текущего пользователя (с подтверждением паролем)
+      tags: [Users, Me]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserDeleteRequest"
+      responses:
+        "204":
+          description: Аккаунт успешно удалён (все данные, курсы, прогресс удаляются)
+        "400":
+          description: Неверный пароль
+        "401":
+          description: Не авторизован
+
+  /me/progress:
+    get:
+      operationId: getUserProgress
+      summary: Прогресс пользователя по всем курсам
+      tags: [Progress]
+
+      responses:
+        "200":
+          description: Прогресс по курсам
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    courseID: { type: string }
+                    progress: { type: number }
+                    status: { type: string }
+
+  /me/courses/{courseID}/lessons/{lessonID}/progress:
+    patch:
+      operationId: updateLessonProgress
+      summary: Обновить прогресс урока
+      tags: [Progress]
+
+      parameters:
+        - name: courseID
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: lessonID
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                percent:
+                  type: number
+                completed:
+                  type: boolean
+                lastWatchedSec:
+                  type: integer
+      responses:
+        "200":
+          description: Прогресс обновлен
+
+  /users/{userId}:
+    delete:
+      operationId: deleteUserById
+      summary: Удалить пользователя (только для админов)
+      tags: [Users, Admin]
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Пользователь удалён
+        "403":
+          description: Недостаточно прав (только admin)
+        "404":
+          description: Пользователь не найден
+
   /courses:
     get:
-      operationId: coursesList
+      operationId: getCourses
       summary: Список всех опубликованных курсов (для всех пользователей)
       tags: [Courses]
       parameters:
@@ -374,27 +602,16 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  data:
-                    type: array
-                    items:
-                      $ref: "#/components/schemas/Course"
-                  total:
-                    type: integer
-                  page:
-                    type: integer
-                  limit:
-                    type: integer
+                $ref: "#/components/schemas/Course"
+
         "400":
           description: Некорректные параметры запроса
 
     post:
-      operationId: coursesCreate
+      operationId: createCourse
       summary: Создание нового курса (только для преподавателей и админов)
       tags: [Courses]
-      security:
-        - BearerAuth: []
+
       requestBody:
         required: true
         content:
@@ -417,17 +634,17 @@ paths:
         "403":
           description: Недостаточно прав
 
-  /courses/{courseId}:
+  /courses/{courseID}:
     get:
-      operationId: coursesGetById
+      operationId: getCourseByID
       summary: Получить подробную информацию о курсе
       tags: [Courses]
       parameters:
-        - name: courseId
+        - name: courseID
           in: path
           required: true
           schema:
-            type: integer
+            type: string
       responses:
         "200":
           description: Детали курса
@@ -443,17 +660,16 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
 
     patch:
-      operationId: coursesUpdate
+      operationId: updateCourse
       summary: Частично обновить курс (для преподавателей и админов)
       tags: [Courses]
-      security:
-        - BearerAuth: []
+
       parameters:
-        - name: courseId
+        - name: courseID
           in: path
           required: true
           schema:
-            type: integer
+            type: string
       requestBody:
         required: true
         content:
@@ -479,17 +695,16 @@ paths:
           description: Курс не найден
 
     delete:
-      operationId: coursesDelete
+      operationId: deleteCourse
       summary: Удалить курс (только для админов или владельца)
       tags: [Courses]
-      security:
-        - BearerAuth: []
+
       parameters:
-        - name: courseId
+        - name: courseID
           in: path
           required: true
           schema:
-            type: integer
+            type: string
       responses:
         "204":
           description: Курс успешно удалён
@@ -498,25 +713,18 @@ paths:
         "404":
           description: Курс не найден
 
-  /courses/{courseId}/sections:
+  /courses/{courseID}/sections:
     get:
-      operationId: coursesGetSections
+      operationId: getSections
       summary: Получить все разделы курса
       tags: [Sections]
-      security:
-        - BearerAuth: []
+
       parameters:
-        - name: courseId
+        - name: courseID
           in: path
           required: true
           schema:
-            type: integer
-        - name: includeUnpublished
-          in: query
-          schema:
-            type: boolean
-            default: false
-          description: Включать неопубликованные разделы (для авторов курса)
+            type: string
       responses:
         "200":
           description: Список разделов курса
@@ -534,17 +742,16 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
 
     post:
-      operationId: coursesCreateSection
+      operationId: createSection
       summary: Создать новый раздел в курсе (для преподавателей/админов)
       tags: [Sections]
-      security:
-        - BearerAuth: []
+
       parameters:
-        - name: courseId
+        - name: courseID
           in: path
           required: true
           schema:
-            type: integer
+            type: string
       requestBody:
         required: true
         content:
@@ -569,24 +776,23 @@ paths:
         "404":
           description: Курс не найден
 
-  /courses/{courseId}/sections/{sectionId}:
+  /courses/{courseID}/sections/{sectionID}:
     get:
-      operationId: sectionsGetById
+      operationId: getSectionByID
       summary: Получить информацию об одном разделе курса
       tags: [Sections]
-      security:
-        - BearerAuth: []
+
       parameters:
-        - name: courseId
+        - name: courseID
           in: path
           required: true
           schema:
-            type: integer
-        - name: sectionId
+            type: string
+        - name: sectionID
           in: path
           required: true
           schema:
-            type: integer
+            type: string
       responses:
         "200":
           description: Детали раздела
@@ -600,22 +806,21 @@ paths:
           description: Раздел или курс не найден
 
     patch:
-      operationId: sectionsUpdate
+      operationId: updateSection
       summary: Обновить раздел (для преподавателей/админов)
       tags: [Sections]
-      security:
-        - BearerAuth: []
+
       parameters:
-        - name: courseId
+        - name: courseID
           in: path
           required: true
           schema:
-            type: integer
-        - name: sectionId
+            type: string
+        - name: sectionID
           in: path
           required: true
           schema:
-            type: integer
+            type: string
       requestBody:
         required: true
         content:
@@ -637,22 +842,21 @@ paths:
           description: Раздел или курс не найден
 
     delete:
-      operationId: sectionsDelete
+      operationId: deleteSection
       summary: Удалить раздел (для преподавателей/админов)
       tags: [Sections]
-      security:
-        - BearerAuth: []
+
       parameters:
-        - name: courseId
+        - name: courseID
           in: path
           required: true
           schema:
-            type: integer
-        - name: sectionId
+            type: string
+        - name: sectionID
           in: path
           required: true
           schema:
-            type: integer
+            type: string
       responses:
         "204":
           description: Раздел успешно удалён
@@ -661,24 +865,23 @@ paths:
         "404":
           description: Раздел или курс не найден
 
-  /courses/{courseId}/sections/{sectionId}/lessons:
+  /courses/{courseID}/sections/{sectionID}/lessons:
     get:
-      operationId: sectionsGetLessons
+      operationId: getLessons
       summary: Получить список всех уроков в разделе курса
       tags: [Lessons]
-      security:
-        - BearerAuth: []
+
       parameters:
-        - name: courseId
+        - name: courseID
           in: path
           required: true
           schema:
-            type: integer
-        - name: sectionId
+            type: string
+        - name: sectionID
           in: path
           required: true
           schema:
-            type: integer
+            type: string
         - name: publishedOnly
           in: query
           schema:
@@ -702,22 +905,21 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
 
     post:
-      operationId: sectionsCreateLesson
+      operationId: createLesson
       summary: Создать новый урок в разделе (для преподавателей/админов)
       tags: [Lessons]
-      security:
-        - BearerAuth: []
+
       parameters:
-        - name: courseId
+        - name: courseID
           in: path
           required: true
           schema:
-            type: integer
-        - name: sectionId
+            type: string
+        - name: sectionID
           in: path
           required: true
           schema:
-            type: integer
+            type: string
       requestBody:
         required: true
         content:
@@ -742,29 +944,28 @@ paths:
         "404":
           description: Курс или раздел не найден
 
-  /courses/{courseId}/sections/{sectionId}/lessons/{lessonId}:
+  /courses/{courseID}/sections/{sectionID}/lessons/{lessonID}:
     get:
-      operationId: lessonsGetById
+      operationId: getLessonByID
       summary: Получить информацию об одном уроке
       tags: [Lessons]
-      security:
-        - BearerAuth: []
+
       parameters:
-        - name: courseId
+        - name: courseID
           in: path
           required: true
           schema:
-            type: integer
-        - name: sectionId
+            type: string
+        - name: sectionID
           in: path
           required: true
           schema:
-            type: integer
-        - name: lessonId
+            type: string
+        - name: lessonID
           in: path
           required: true
           schema:
-            type: integer
+            type: string
       responses:
         "200":
           description: Детали урока
@@ -778,27 +979,26 @@ paths:
           description: Урок не найден
 
     patch:
-      operationId: lessonsUpdate
+      operationId: updateLesson
       summary: Обновить урок (для преподавателей/админов)
       tags: [Lessons]
-      security:
-        - BearerAuth: []
+
       parameters:
-        - name: courseId
+        - name: courseID
           in: path
           required: true
           schema:
-            type: integer
-        - name: sectionId
+            type: string
+        - name: sectionID
           in: path
           required: true
           schema:
-            type: integer
-        - name: lessonId
+            type: string
+        - name: lessonID
           in: path
           required: true
           schema:
-            type: integer
+            type: string
       requestBody:
         required: true
         content:
@@ -820,27 +1020,26 @@ paths:
           description: Урок не найден
 
     delete:
-      operationId: lessonsDelete
+      operationId: deleteLesson
       summary: Удалить урок (для преподавателей/админов)
       tags: [Lessons]
-      security:
-        - BearerAuth: []
+
       parameters:
-        - name: courseId
+        - name: courseID
           in: path
           required: true
           schema:
-            type: integer
-        - name: sectionId
+            type: string
+        - name: sectionID
           in: path
           required: true
           schema:
-            type: integer
-        - name: lessonId
+            type: string
+        - name: lessonID
           in: path
           required: true
           schema:
-            type: integer
+            type: string
       responses:
         "204":
           description: Урок успешно удалён
@@ -851,11 +1050,10 @@ paths:
 
   /courses/{courseId}/enroll:
     post:
-      operationId: enrollmentsEnrollInCourse
+      operationId: enrollCourse
       summary: Записаться на курс / купить курс
       tags: [Enrollments]
-      security:
-        - BearerAuth: []
+
       parameters:
         - name: courseId
           in: path
@@ -882,59 +1080,3 @@ paths:
           description: Требуется оплата
         "409":
           description: Уже записан на курс
-
-  /me/progress:
-    get:
-      operationId: progressGetUserProgress
-      summary: Прогресс пользователя по всем курсам
-      tags: [Progress]
-      security:
-        - BearerAuth: []
-      responses:
-        "200":
-          description: Прогресс по курсам
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    courseId: { type: integer }
-                    progress: { type: number }
-                    status: { type: string }
-
-  /me/courses/{courseId}/lessons/{lessonId}/progress:
-    patch:
-      operationId: progressUpdateLessonProgress
-      summary: Обновить прогресс урока
-      tags: [Progress]
-      security:
-        - BearerAuth: []
-      parameters:
-        - name: courseId
-          in: path
-          required: true
-          schema:
-            type: integer
-        - name: lessonId
-          in: path
-          required: true
-          schema:
-            type: integer
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                percent:
-                  type: number
-                completed:
-                  type: boolean
-                lastWatchedSec:
-                  type: integer
-      responses:
-        "200":
-          description: Прогресс обновлен

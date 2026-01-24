@@ -1,12 +1,9 @@
 [handbooks]
-logLevel = "info"
+logLevel = 1
 
 [database]
 host = "localhost"
-port = 5431
-user = "postgres"
-password = "pass1234"
-name = "handbooks"
+port = 5432
 sslmode = "disable"
 
 [server]
@@ -17,13 +14,11 @@ writeTimeout = "30s"
 idleTimeout = "60s"
 
 [redis]
-addr = "localhost:5739"
-password = "redis123"
+addr = "localhost:6379"
 db = 0
 refreshTokenTTL = "168h"
 accessTokenTTL = "24h"
 
 [jwt]
-key = "98c5772ae16aaa4fd0013eb338252a93b198fb40e9337506334b3aeb21abbe4cd9289cdd"
 issuer = "handbooks-server"
 audience = "handbooks-client"

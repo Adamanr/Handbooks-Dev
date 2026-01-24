@@ -1,8 +1,9 @@
 -- +goose Up
 -- +goose StatementBegin
 CREATE TABLE IF NOT EXISTS users (
-    id              BIGSERIAL PRIMARY KEY,
+    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     email           VARCHAR(255) UNIQUE NOT NULL,
+    slug            VARCHAR(120) UNIQUE NOT NULL,
     password_hash   VARCHAR(255) NOT NULL,
     full_name       VARCHAR(150),
     avatar_url      VARCHAR(512),

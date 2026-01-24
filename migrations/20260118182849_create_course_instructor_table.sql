@@ -1,9 +1,9 @@
 -- +goose Up
 -- +goose StatementBegin
 CREATE TABLE IF NOT EXISTS course_instructors(
-    id              BIGSERIAL PRIMARY KEY,
-    course_id       BIGINT NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
-    user_id         BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    course_id       UUID NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
+    user_id         UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     is_main         BOOLEAN NOT NULL,
     position        INTEGER NOT NULL,
     bio_on_course   TEXT NOT NULL
