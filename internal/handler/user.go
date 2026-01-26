@@ -226,10 +226,17 @@ func (s *Server) DeleteUser(w http.ResponseWriter, r *http.Request, userID strin
 // UsersDeleteCurrent implements [api.ServerInterface].
 func (s *Server) DeleteCurrentUser(w http.ResponseWriter, r *http.Request) {
 	var (
-		ctx    = r.Context()
-		userID = extractToken(r)
+		ctx = r.Context()
 	)
+	claimsValue := ctx.Value("user")
 
+	claims, ok := claimsValue.(*Claims)
+	if !ok {
+		slog.ErrorContext(ctx, "Error parsing claims", slog.Any("Claims", claimsValue))
+		s.JSON(w, r, http.StatusInternalServerError, nil, "internal server error")
+		return
+	}
+	userID := claims.ID
 	if err := storage.Delete[models.User](ctx, "users", s.DB, func(sb *sqlbuilder.SelectBuilder) {
 		sb.Where(sb.Equal("id", userID))
 	}); err != nil {
@@ -244,9 +251,18 @@ func (s *Server) DeleteCurrentUser(w http.ResponseWriter, r *http.Request) {
 // UsersGetCurrent implements [api.ServerInterface].
 func (s *Server) GetCurrentUser(w http.ResponseWriter, r *http.Request) {
 	var (
-		ctx    = r.Context()
-		userID = extractToken(r)
+		ctx = r.Context()
 	)
+	claimsValue := ctx.Value("user")
+
+	claims, ok := claimsValue.(*Claims)
+	if !ok {
+		slog.ErrorContext(ctx, "Error parsing claims", slog.Any("Claims", claimsValue))
+		s.JSON(w, r, http.StatusInternalServerError, nil, "internal server error")
+		return
+	}
+
+	userID := claims.ID
 
 	user, err := storage.GetOne[models.User](ctx, s.DB, "users", func(sb *sqlbuilder.SelectBuilder) {
 		sb.Where(sb.Equal("id", userID))
@@ -254,7 +270,7 @@ func (s *Server) GetCurrentUser(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		slog.ErrorContext(ctx, "Error getting user by ID",
-			slog.String("ID", userID),
+			slog.Any("ID", userID),
 			slog.String("error", err.Error()))
 		s.JSON(w, r, http.StatusInternalServerError, nil, "internal server error")
 		return
@@ -266,9 +282,8 @@ func (s *Server) GetCurrentUser(w http.ResponseWriter, r *http.Request) {
 // UpdateCurrentUser implements [api.ServerInterface].
 func (s *Server) UpdateCurrentUser(w http.ResponseWriter, r *http.Request) {
 	var (
-		ctx    = r.Context()
-		user   models.User
-		userID = extractToken(r)
+		ctx  = r.Context()
+		user models.User
 	)
 
 	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
@@ -277,6 +292,16 @@ func (s *Server) UpdateCurrentUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	claimsValue := ctx.Value("user")
+
+	claims, ok := claimsValue.(*Claims)
+	if !ok {
+		slog.ErrorContext(ctx, "Error parsing claims", slog.Any("Claims", claimsValue))
+		s.JSON(w, r, http.StatusInternalServerError, nil, "internal server error")
+		return
+	}
+
+	userID := claims.ID
 	if err := storage.Update[models.User](ctx, "users", user, s.DB, func(sb *sqlbuilder.UpdateBuilder) {
 		sb.Where(sb.Equal("id", userID))
 	}); err != nil {
