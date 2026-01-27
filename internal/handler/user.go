@@ -94,7 +94,6 @@ func (s *Server) AuthRegisterUser(w http.ResponseWriter, r *http.Request) {
 	s.issueTokens(w, r, &user)
 }
 
-// TODO: пофиксить хуйню с рефреш токенами, при добавлении в заголовок access токена - пишет что его нет, если добавить refresh токен - пишет, что невозможно провалидировать токен, необходимо пофиксить, Артём Павлович
 // AuthRefreshToken implements [api.ServerInterface].
 func (s *Server) AuthRefreshToken(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -109,24 +108,12 @@ func (s *Server) AuthRefreshToken(w http.ResponseWriter, r *http.Request) {
 		s.JSON(w, r, http.StatusUnauthorized, "Empty refresh token", "error")
 		return
 	}
+	claimsValue := ctx.Value("user")
 
-	accessStr := extractToken(r)
-	if accessStr == "" {
-		s.JSON(w, r, http.StatusUnauthorized, "Missing access token for refresh", "error")
-		return
-	}
-
-	var claims *Claims
-	_, err = jwt.ParseWithClaims(accessStr, claims, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-		}
-		return s.JwtKey, nil
-	}, jwt.WithAudience(), jwt.WithoutClaimsValidation())
-
-	if err != nil && !errors.Is(err, jwt.ErrTokenExpired) {
-		slog.WarnContext(ctx, "invalid access token for refresh", "err", err)
-		s.JSON(w, r, http.StatusUnauthorized, "Invalid access token", "error")
+	claims, ok := claimsValue.(*Claims)
+	if !ok {
+		slog.ErrorContext(ctx, "Error parsing claims", slog.Any("Claims", claimsValue))
+		s.JSON(w, r, http.StatusInternalServerError, nil, "internal server error")
 		return
 	}
 
@@ -136,21 +123,15 @@ func (s *Server) AuthRefreshToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	key := fmt.Sprintf("refresh_hash:%d", refreshStr)
-	storedHash, err := s.Redis.Get(ctx, key).Result()
-	if err == redis.Nil {
+	key := "refresh_hash:" + refreshStr
+	if _, err := s.Redis.Get(ctx, key).Result(); err == redis.Nil {
 		s.JSON(w, r, http.StatusUnauthorized, "No active refresh token", "error")
 		return
 	}
+
 	if err != nil {
 		slog.ErrorContext(ctx, "redis get error", "err", err)
 		s.JSON(w, r, http.StatusInternalServerError, "Server error", "error")
-		return
-	}
-
-	if err := bcrypt.CompareHashAndPassword([]byte(storedHash), []byte(refreshStr)); err != nil {
-		s.deleteRefreshCookie(w)
-		s.JSON(w, r, http.StatusUnauthorized, "Invalid refresh token", "error")
 		return
 	}
 
@@ -179,14 +160,14 @@ func (s *Server) AuthRefreshToken(w http.ResponseWriter, r *http.Request) {
 		slog.ErrorContext(ctx, "redis del old refresh failed", "err", err)
 	}
 
-	if err := s.Redis.Set(ctx, key, "Valid", s.Config.RedisRefreshTokenDur()).Err(); err != nil {
+	if err := s.Redis.Set(ctx, key, "valid", s.Config.RedisRefreshTokenDur()).Err(); err != nil {
 		slog.ErrorContext(ctx, "redis set new refresh failed", "err", err)
 		s.JSON(w, r, http.StatusInternalServerError, "Server error", "error")
 		return
 	}
 
-	access := fmt.Sprintf("access_hash:%d", accessStr)
-	if err := s.Redis.Set(ctx, access, "Valid", s.Config.RedisAccessTokenDur()).Err(); err != nil {
+	access := "access_hash:" + newAccess
+	if err := s.Redis.Set(ctx, access, "valid", s.Config.RedisAccessTokenDur()).Err(); err != nil {
 		slog.ErrorContext(ctx, "redis set new access failed", "err", err)
 		s.JSON(w, r, http.StatusInternalServerError, "Server error", "error")
 		return
@@ -204,7 +185,7 @@ func (s *Server) AuthRefreshToken(w http.ResponseWriter, r *http.Request) {
 
 	s.JSON(w, r, http.StatusOK, map[string]any{
 		"access_token": newAccess,
-		"expires_in":   s.Config.RedisAccessTokenDur(),
+		"expires_in":   86400, // 24 часа
 	}, "auth")
 }
 
@@ -354,7 +335,6 @@ func (s *Server) issueTokens(w http.ResponseWriter, r *http.Request, user *model
 		s.JSON(w, r, http.StatusInternalServerError, "Server error", "error")
 		return
 	}
-
 	http.SetCookie(w, &http.Cookie{
 		Name:     "refresh_token",
 		Value:    refresh,
